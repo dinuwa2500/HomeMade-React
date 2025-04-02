@@ -9,6 +9,7 @@ import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import ProductsSlider from '../../components/ProductsSlider';
 
+
 const Home = () => {
   const [value, setValue] = React.useState(0);
 
@@ -74,6 +75,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+
 
       <br />
       <br />
