@@ -11,15 +11,15 @@ import { Button } from '@mui/material';
 
 const ProductItems = () => {
   return (
-    <div className="ProductItems shadow-lg rounded-md overflow-hidden border-1  border-[rgba(0,0,0,0.1)]">
-      <div className="img-wrapper group rounded-md w-full h-[250px] overflow-hidden">
+    <div className="ProductItems shadow-lg rounded-md overflow-hidden border border-[rgba(0,0,0,0.1)]">
+      <div className="img-wrapper group relative rounded-md w-full h-[250px] overflow-hidden">
         <img
           src="https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg"
-          alt=""
+          alt="Handloom Sarong"
           className="w-full"
         />
 
-        <div className="actions absolute top-[-200px] right-[-12px] flex items-center gap-2 flex-col w-[80px] z-50 transition-all  duration-400 group-hover:top-[15px]">
+        <div className="actions absolute top-[-200px] right-[-12px] flex items-center gap-2 flex-col w-[80px] z-50 transition-all duration-300 group-hover:top-[15px]">
           <Button
             className="!w-[35px] !h-[35px] !min-w-[35px] !rounded-full"
             sx={{
@@ -61,11 +61,10 @@ const ProductItems = () => {
           >
             <FaRegHeart className="text-[18px]" />
           </Button>
-
         </div>
       </div>
 
-      <div className="info p-3  ">
+      <div className="info p-3">
         <h6 className="text-[12px]">
           <Link to="/" className="link">
             Green and Orange

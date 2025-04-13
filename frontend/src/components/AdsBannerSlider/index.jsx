@@ -7,7 +7,7 @@ import assets from '../../assets/assets.js';
 
 const AdsBannerSlider = () => {
   return (
-    <div className="slider flex justify-center items-center w-full">
+    <div className="slider flex justify-center items-center w-full mt-3 mb-0">
       <div className="container py-5 max-w-6xl mx-auto">
         <Swiper
           slidesPerView={3}
@@ -15,7 +15,12 @@ const AdsBannerSlider = () => {
           modules={[Navigation]}
           className="w-full"
         >
-          {[assets.ad1, assets.ad2, assets.ad3].map((ad, index) => (
+          {[
+            assets.ad1,
+            assets.ad2,
+            (assets.ad3 =
+              'https://ekade.lk/wp-content/uploads/2023/06/banner-3.jpg'),
+          ].map((ad, index) => (
             <SwiperSlide key={index}>
               <div className="flex justify-center items-center w-full h-full">
                 <div className="box bannerBox overflow-hidden rounded-lg">

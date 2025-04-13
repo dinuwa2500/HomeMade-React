@@ -12,6 +12,11 @@ body {
   overflow-x: hidden;
 }
 
+p {
+  font-size: 14px;
+  line-height: 25px;
+}
+
 .MuiBadge-badge {
   background-color: #ff5722 !important;
 }
@@ -44,9 +49,39 @@ body {
   color: black;
 }
 
+.ProductSlider .swiper-wrapper {
+  padding: 15px;
+  margin-left: -15px;
+  margin-right: -15px;
+}
 
-.ProductSlider .swiper-wrapper{ padding: 15px; margin-left: -15px; margin-right: -15px; }
+.MuiCheckbox-root {
+  padding: 6px !important;
+}
 
+.productContent .actions button {
+  color: black !important;
+  min-width: 40px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
 
-.MuiCheckbox-root{padding: 6px !important; }
-  
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  -moz-appearance: none;
+}
+
+.cartPanel .MuiPaper-root {
+  width: 400px !important;
+  overflow: hidden !important;
+}
+
+.custom-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.custom-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

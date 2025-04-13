@@ -9,3 +9,11 @@
     background: #888 !important;
     border-radius: 5px !important;
 }
+
+
+.range-slider .range-slider__thumb {
+
+
+    width: 14px !important;
+    height: 14px !important;
+}
