@@ -1,14 +1,40 @@
 import { TextField, InputAdornment, IconButton, Button } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
+import MyContext from '../../context';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
+  const [formFields, setformFields] = useState({
+    email: '',
+    password: '',
+  });
+
+  const context = useContext(MyContext);
+
+  const history = useNavigate();
+
+  const forgotPassword = () => {
+    context.Toast('success', 'OTP Send');
+    history('/verify');
+  };
+
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
+  };
+
+  // Common sx style to hide any browser default adornments
+  const sxHideDefaultIcons = {
+    '& input::-ms-clear, & input::-ms-reveal': {
+      display: 'none',
+    },
+    '& input::-webkit-credentials-auto-fill-button': {
+      display: 'none',
+      visibility: 'hidden',
+    },
   };
 
   return (
@@ -22,6 +48,7 @@ const Login = () => {
             <div className="form-group w-full mb-5">
               <TextField
                 type="email"
+                name="email"
                 id="email"
                 label="Email"
                 variant="outlined"
@@ -33,6 +60,7 @@ const Login = () => {
             <div className="form-group w-full mb-5">
               <TextField
                 id="password"
+                name="password"
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
                 variant="outlined"
@@ -51,16 +79,17 @@ const Login = () => {
                     </InputAdornment>
                   ),
                 }}
+                sx={sxHideDefaultIcons}
               />
             </div>
 
             <div className="flex justify-start mb-5">
-              <Link
-                to="/forgot-password"
-                className="link text-sm font-semibold text-gray-600 hover:text-blue-600 transition duration-150 ease-in-out"
+              <a
+                className="link cursor-pointer text-sm font-semibold text-gray-600 hover:text-blue-600 transition duration-150 ease-in-out"
+                onClick={forgotPassword}
               >
                 Forgot password?
-              </Link>
+              </a>
             </div>
 
             <div className="form-group w-full mb-5">

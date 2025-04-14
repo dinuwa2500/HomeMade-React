@@ -25,6 +25,16 @@ const CartPage = () => {
         'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
       stock: 5,
     },
+    {
+      id: 3,
+      name: 'Palmyra Basket Design-2',
+      brand: 'Traditional Crafts',
+      price: 500.0,
+      quantity: 3,
+      image:
+        'https://ekade.lk/wp-content/uploads/2023/06/466494a68509bd68ff1eb52e6a105f54.jpg',
+      stock: 5,
+    },
   ];
 
   const [cartItems, setCartItems] = useState(initialCartItems);
