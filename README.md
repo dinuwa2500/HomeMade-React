@@ -37,7 +37,7 @@ git clone https://github.com/your-username/HomeMade-React.git
 
     Navigate to the project folder:
 
-cd HomeMade-React
+cd HomeMade 1.0
 
     Install dependencies:
 
