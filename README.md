@@ -33,7 +33,8 @@ Craftopia is the frontend of a homemade product buying and selling platform buil
 
     Clone the repository:
 
-git clone https://github.com/your-username/HomeMade-React.git
+git clone https://github.com/dinuwa2500/HomeMade-React.git
+
 
     Navigate to the project folder:
 
