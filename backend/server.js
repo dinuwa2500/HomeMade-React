@@ -1,55 +1,58 @@
-import express from "express";
-import dotenv from 'dotenv'
-import connectDB from './db/db.js'
-import userRoutes from './routes/UserRoutes.js'
-import { errorHandler } from './middleware/errorHandler.js'
-import { invalidPathHandler } from './middleware/errorHandler.js'
+// server.js (or index.js)
+
+import express from 'express';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import morgan from 'morgan';
+import helmet from 'helmet';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import router from './routes/UserRoutes.js'
-import TicketRouter from './routes/TicketRoute.js'
-import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import cloudinary from 'cloudinary';
+import connectDB from './db/db.js';
 
-
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
+// Config
 dotenv.config();
+
+// Express app
 const app = express();
 
-// Connect to database
-connectDB();
-
-
-
-
-app.use(cors());
+// Middleware
 app.use(express.json());
- app.use(bodyParser.json()); // Parse JSON bodies
- app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.FRONTEND_URI,
+  })
+);
+app.use(helmet());
+app.use(morgan());
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+  })
+);
+app.use(cookieParser());
 
-// Example route
-app.get('/', (req, res) => {
-  res.send('API is running...');
+// DB connect
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error(err));
+
+// Start server
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on http://localhost:${process.env.PORT}`);
 });
 
-
-
-app.use('/api/users', userRoutes);
-app.use("/api", TicketRouter);
-
-
-
-
-app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
-
-app.use(invalidPathHandler);
-app.use(errorHandler);
-
-
-// Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start server
+connectDB();
+// GET route
+app.get('/', (req, res) => {
+  res.send('Welcome to the API!');
+});
