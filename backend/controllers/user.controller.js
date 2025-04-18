@@ -2,6 +2,9 @@ import UserModel from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+import sendEmailFun from '../config/sendEmail.js';
+import verificationEmail from '../utilities/VerifyEmailTemplate.js';
+
 export async function registerUserController(request, response) {
   try {
     let user;
@@ -34,16 +37,18 @@ export async function registerUserController(request, response) {
       name,
       email,
       password: hashPassword,
+      otp: verifycode,
+      otpExpires: Date.now() + 60000,
     });
     await user.save();
 
     //send verification email
-    const resp = sendEmailFun(
-      email,
-      'verify email ',
-      '',
-      'Your OTP is ' + verifycode
-    );
+    const verifyEmail = await sendEmailFun({
+      sendTo: email,
+      text: '',s
+      subject: 'Verify Email from Craftopia',
+      html: verificationEmail(name, verifycode),
+    });
   } catch (error) {
     return response.status(500).json({
       message: error.message || error,

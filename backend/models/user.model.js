@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    otp: {
+      type: String,
+    },
+    otpExpires: {
+      type: Date,
+    },
     status: {
       type: String,
       enum: ['Active', 'Inactive', 'Suspended'],
