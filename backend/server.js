@@ -12,6 +12,8 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import cloudinary from 'cloudinary';
 import connectDB from './db/db.js';
+import userRouter from './routes/user.route.js';
+import UserModel from './models/user.model.js';
 
 // Config
 dotenv.config();
@@ -50,9 +52,39 @@ app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);
 });
 
-// Start server
-connectDB();
 // GET route
 app.get('/', (req, res) => {
   res.send('Welcome to the API!');
 });
+
+app.use('/api/users', userRouter);
+
+// Example for Express
+app.delete('/delete-all-users', async (req, res) => {
+  await UserModel.deleteMany({});
+  res.json({ message: 'All users deleted' });
+});
+
+// Configuration
+cloudinary.config({
+  cloud_name: 'dinuwapvt',
+  api_key: '487264227394868',
+  api_secret: 'LuuDPSUEt53s0YYBfJMf6HuFiJg', // Click 'View API Keys' above to copy your API secret
+  secure: true,
+  timeout: 60000, // Increase timeout to 60 seconds
+});
+
+// Test route
+app.get('/test-cloudinary', async (req, res) => {
+  try {
+    const result = await cloudinary.uploader.upload(
+      'https://picsum.photos/200'
+    );
+    res.send(result);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Start server
+connectDB();

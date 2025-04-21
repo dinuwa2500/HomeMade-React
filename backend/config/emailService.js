@@ -11,20 +11,23 @@ const transporter = nodemailder.createTransport({
   },
 });
 
-async function sendEmail(to, subject, text, html) {
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL,
-      to,
-      subject,
-      text,
-      html,
-    });
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('Error sending email : ', error);
-    return { success: true, error: error.message };
-  }
-}
+const sendEmailFun = async ({ to, subject, text, html }) => {
+  const mailOptions = {
+    from: process.env.EMAIL, // Sender address
+    to: to, // List of recipients
+    subject: subject, // Subject line
+    text: text, // Plain text body
+    html: html, // HTML body
+  };
 
-module.exports = { sendEmail };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: ', info.response);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending email: ', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export { sendEmailFun };
