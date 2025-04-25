@@ -9,16 +9,28 @@ import { IoGitCompareOutline } from 'react-icons/io5';
 import { MdZoomOutMap } from 'react-icons/md';
 import { Button } from '@mui/material';
 
-const ProductItems = () => {
+const ProductItems = ({ product }) => {
+  // fallback demo data if no product is provided
+  const demo = {
+    images: [
+      'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
+    ],
+    name: 'Handloom Sarong',
+    price: 1999,
+    discount: 0,
+    rating: 4.5,
+    _id: 'demo',
+    brand: 'Demo',
+  };
+  const p = product || demo;
   return (
     <div className="ProductItems shadow-lg rounded-md overflow-hidden border border-[rgba(0,0,0,0.1)]">
       <div className="img-wrapper group relative rounded-md w-full h-[250px] overflow-hidden">
         <img
-          src="https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg"
-          alt="Handloom Sarong"
-          className="w-full"
+          src={p.images && p.images.length > 0 ? p.images[0] : demo.images[0]}
+          alt={p.name}
+          className="w-full h-full object-cover"
         />
-
         <div className="actions absolute top-[-200px] right-[-12px] flex items-center gap-2 flex-col w-[80px] z-50 transition-all duration-300 group-hover:top-[15px]">
           <Button
             className="!w-[35px] !h-[35px] !min-w-[35px] !rounded-full"
@@ -33,7 +45,6 @@ const ProductItems = () => {
           >
             <MdZoomOutMap className="text-[18px]" />
           </Button>
-
           <Button
             className="!w-[35px] !h-[35px] !min-w-[35px] !rounded-full"
             sx={{
@@ -47,7 +58,6 @@ const ProductItems = () => {
           >
             <IoGitCompareOutline className="text-[18px]" />
           </Button>
-
           <Button
             className="!w-[35px] !h-[35px] !min-w-[35px] !rounded-full"
             sx={{
@@ -63,22 +73,26 @@ const ProductItems = () => {
           </Button>
         </div>
       </div>
-
-      <div className="info p-3">
-        <h6 className="text-[12px]">
-          <Link to="/" className="link">
-            Green and Orange
-          </Link>
-        </h6>
-        <h3 className="text-[16px] title mt-2 mb-2 font-[500] text-[rgba(0,0,0,0.9)]">
-          <Link to="/" className="link">
-            Handloom Sarong
-          </Link>
-        </h3>
-        <Rating name="size-small" defaultValue={4} size="small" readOnly />
-
-        <div className="flex items-center font-[500] text-[16px]">
-          <span>Rs.1500</span>
+      <div className="p-4">
+        <Link to={`/product/${p._id}`} className="block font-semibold text-lg mb-1 hover:text-blue-600 transition-colors">
+          {p.name}
+        </Link>
+        <div className="flex items-center gap-2 mb-2">
+          {p.discount && p.discount > 0 ? (
+            <>
+              <span className="text-red-600 font-bold text-xl">Rs.{p.price - (p.price * p.discount) / 100}</span>
+              <span className="line-through text-gray-400">Rs.{p.price}</span>
+              <span className="bg-red-100 text-red-600 px-2 py-1 text-xs rounded">-{p.discount}%</span>
+            </>
+          ) : (
+            <span className="text-gray-900 font-bold text-xl">Rs.{p.price}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Stack spacing={1}>
+            <Rating name="product-rating" value={Number(p.rating) || 0} precision={0.5} readOnly size="small" />
+          </Stack>
+          <span className="text-xs text-gray-500">{p.brand}</span>
         </div>
       </div>
     </div>

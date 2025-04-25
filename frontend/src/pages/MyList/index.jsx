@@ -1,68 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchDataFromApi } from '../api';
 
 const MyList = () => {
-  const purchaseHistory = [
-    {
-      id: 1,
-      name: 'Palmyra Basket',
-      brand: 'No Brand',
-      price: 345.0,
-      quantity: 2,
-      image: 'https://ekade.lk/wp-content/uploads/2017/09/Palmyra-Basket-3.jpg',
-      purchasedOn: '2024-03-21',
-    },
-    {
-      id: 2,
-      name: 'Handloom Sarong',
-      brand: 'Traditional Crafts',
-      price: 1700.0,
-      quantity: 1,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
-      purchasedOn: '2024-04-02',
-    },
-    {
-      id: 3,
-      name: 'Wooden Mask',
-      brand: 'Ceylon Art',
-      price: 1200.0,
-      quantity: 1,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/000e85bc0dfc377d08fc8a8d2528ab12-420x420.jpg',
-      purchasedOn: '2024-04-03',
-    },
-    {
-      id: 4,
-      name: 'Batiks T-shirt',
-      brand: 'Island Wear',
-      price: 950.0,
-      quantity: 1,
-      image:
-        'https://varna.lk/wp-content/uploads/2021/01/by-the-sea-600x600.jpg',
-      purchasedOn: '2024-04-04',
-    },
-    {
-      id: 5,
-      name: 'Coconut Shell Bowl',
-      brand: 'Eco Goods',
-      price: 450.0,
-      quantity: 3,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/354be36e922d83f85313f7840e8dbd70-420x420.jpg',
-      purchasedOn: '2024-04-04',
-    },
-    {
-      id: 6,
-      name: 'Tea Gift Pack',
-      brand: 'Ceylon Tea',
-      price: 2500.0,
-      quantity: 1,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/2df12b462a55756fa6b86437dfb8193d-600x600.jpg',
-      purchasedOn: '2024-04-05',
-    },
-  ];
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPurchaseHistory = async () => {
+      try {
+        // Fetch orders for the logged-in user
+        const response = await fetchDataFromApi('/api/order/myorders');
+        // Flatten all items from all orders, add order date to each item
+        const orders = response.orders || response.data || [];
+        // Each order has an 'items' array
+        const allItems = orders.flatMap(order =>
+          (order.items || []).map(item => ({
+            ...item,
+            purchasedOn: order.createdAt,
+            orderId: order.orderId || order._id,
+          }))
+        );
+        setPurchaseHistory(allItems);
+      } catch (err) {
+        setError('Failed to load purchase history.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPurchaseHistory();
+  }, []);
 
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,6 +46,34 @@ const MyList = () => {
       setCurrentPage(page);
     }
   };
+
+  if (loading) {
+    return (
+      <section className="py-12 bg-gray-50 min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <div className="mx-auto max-w-md">
+              <h3 className="mt-4 text-lg font-medium text-gray-900">Loading...</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-12 bg-gray-50 min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <div className="mx-auto max-w-md">
+              <h3 className="mt-4 text-lg font-medium text-red-600">{error}</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-12 bg-gray-50 min-h-screen">
@@ -127,13 +123,13 @@ const MyList = () => {
               <div className="divide-y divide-gray-200">
                 {currentItems.map((item) => (
                   <div
-                    key={item.id}
+                    key={item._id || item.productId || item.id}
                     className="p-5 hover:bg-gray-50 transition-colors duration-150"
                   >
                     <div className="flex flex-col sm:flex-row gap-5">
                       <div className="flex-shrink-0">
                         <img
-                          src={item.image}
+                          src={Array.isArray(item.image) ? item.image[0] : item.image}
                           alt={item.name}
                           className="w-24 h-24 rounded-lg object-cover border border-gray-200"
                         />
@@ -149,21 +145,21 @@ const MyList = () => {
                             </p>
                           </div>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Purchased: {item.purchasedOn}
+                            Purchased: {item.purchasedOn ? new Date(item.purchasedOn).toLocaleDateString() : ''}
                           </span>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                           <div className="text-gray-600">
                             <span className="font-medium">Quantity:</span>{' '}
-                            {item.quantity}
+                            {item.qty || item.quantity}
                           </div>
                           <div className="text-gray-600">
                             <span className="font-medium">Unit Price:</span> Rs{' '}
-                            {item.price.toFixed(2)}
+                            {(item.price || 0).toFixed(2)}
                           </div>
                           <div className="ml-auto">
                             <span className="text-lg font-bold text-red-600">
-                              Rs {(item.price * item.quantity).toFixed(2)}
+                              Rs {((item.price || 0) * (item.qty || item.quantity || 1)).toFixed(2)}
                             </span>
                           </div>
                         </div>

@@ -9,9 +9,25 @@ import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import ProductsSlider from '../../components/ProductsSlider';
 
-
 const Home = () => {
   const [value, setValue] = React.useState(0);
+  const [products, setProducts] = React.useState([]);
+
+  React.useEffect(() => {
+    // Fetch products from backend
+    fetch(`${import.meta.env.VITE_BACKEND_URI || 'http://localhost:8000'}/api/products`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.products) {
+          setProducts(data.products);
+        } else if (Array.isArray(data)) {
+          setProducts(data);
+        }
+      })
+      .catch((err) => {
+        setProducts([]);
+      });
+  }, []);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -46,7 +62,7 @@ const Home = () => {
             </div>
           </div>
 
-          <ProductsSlider items={5} />
+          <ProductsSlider items={5} products={products} />
         </div>
       </section>
 
@@ -71,7 +87,7 @@ const Home = () => {
         <div className="container ">
           <div className="leftsec p-5">
             <h2 className="text-[20px] font-[600]">Latest Products</h2>
-            <ProductsSlider items={5} />
+            <ProductsSlider items={5} products={products} />
           </div>
         </div>
       </section>

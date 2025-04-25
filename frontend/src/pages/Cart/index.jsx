@@ -1,84 +1,82 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IoCloseSharp } from 'react-icons/io5';
-import { FiPlus, FiMinus } from 'react-icons/fi';
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
+import { IoCloseSharp } from "react-icons/io5";
+import { FiPlus, FiMinus } from "react-icons/fi";
+import {
+  removeFromCart,
+  updateCartItem,
+  clearCart,
+  syncUserCart,
+} from "../../features/cartSlice";
+import {
+  addCartItem,
+  updateCartItemAPI,
+  deleteCartItemAPI,
+} from "../../features/cartAPI";
 
 const CartPage = () => {
-  // Initial cart data with state
-  const initialCartItems = [
-    {
-      id: 1,
-      name: 'Palmyra Basket',
-      brand: 'No Brand',
-      price: 345.0,
-      quantity: 2,
-      image: 'https://ekade.lk/wp-content/uploads/2017/09/Palmyra-Basket-3.jpg',
-      stock: 10,
-    },
-    {
-      id: 2,
-      name: 'Handloom Sarong',
-      brand: 'Traditional Crafts',
-      price: 1700.0,
-      quantity: 1,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
-      stock: 5,
-    },
-    {
-      id: 3,
-      name: 'Palmyra Basket Design-2',
-      brand: 'Traditional Crafts',
-      price: 500.0,
-      quantity: 3,
-      image:
-        'https://ekade.lk/wp-content/uploads/2023/06/466494a68509bd68ff1eb52e6a105f54.jpg',
-      stock: 5,
-    },
-  ];
+  const user = useSelector((state) => state.user.userInfo);
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const dispatch = useDispatch();
 
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  // Sync cart from backend ONLY on first mount, not on every user/dispatch change
+  useEffect(() => {
+    if (user && user.token) {
+      dispatch(syncUserCart(user.token));
+    }
+    // eslint-disable-next-line
+  }, []); // Only once on mount
 
   // Increment item quantity
-  const incrementQuantity = (itemId) => {
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === itemId && item.quantity < item.stock
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
+  const incrementQuantity = async (item) => {
+    if (item.qty < item.countInStock) {
+      dispatch(updateCartItem({ ...item, qty: item.qty + 1 }));
+      if (user && user.token && item.cartId) {
+        await updateCartItemAPI(item.cartId, item.qty + 1, user.token);
+      }
+    }
   };
 
   // Decrement item quantity
-  const decrementQuantity = (itemId) => {
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === itemId && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
+  const decrementQuantity = async (item) => {
+    if (item.qty > 1) {
+      dispatch(updateCartItem({ ...item, qty: item.qty - 1 }));
+      if (user && user.token && item.cartId) {
+        await updateCartItemAPI(item.cartId, item.qty - 1, user.token);
+      }
+    }
   };
 
   // Remove single item
-  const removeItem = (itemId) => {
-    setCartItems(cartItems.filter((item) => item.id !== itemId));
+  const removeItem = async (item) => {
+    dispatch(removeFromCart(item));
+    if (user && user.token && item.cartId) {
+      await deleteCartItemAPI(item.cartId, user.token);
+    }
   };
 
   // Clear entire cart
-  const clearCart = () => {
-    setCartItems([]);
+  const handleClearCart = async () => {
+    for (const item of cartItems) {
+      if (user && user.token && item.cartId) {
+        await deleteCartItemAPI(item.cartId, user.token);
+      }
+    }
+    dispatch(clearCart());
   };
 
   // Calculate totals
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.price * item.qty,
     0
   );
-  const shippingFee = 200;
+  const shippingFee = cartItems.length > 0 ? 200 : 0;
   const total = subtotal + shippingFee;
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  // Show unique products count
+  const uniqueProductCount = cartItems.length;
+  // Show total units
+  const itemCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <section className="section py-8 bg-gray-50 min-h-screen">
@@ -92,8 +90,10 @@ const CartPage = () => {
                   Your Shopping Cart
                 </h2>
                 <p className="text-gray-600">
-                  <span className="font-bold text-red-500">{itemCount}</span>{' '}
-                  {itemCount === 1 ? 'Item' : 'Items'} in your cart
+                  <span className="font-bold text-red-500">
+                    {uniqueProductCount}
+                  </span> Items |{" "}
+                  {/* <span className="font-bold text-red-500">{itemCount}</span> Units in your cart */}
                 </p>
               </div>
 
@@ -115,13 +115,13 @@ const CartPage = () => {
                   <div className="divide-y divide-gray-200">
                     {cartItems.map((item) => (
                       <div
-                        key={item.id}
+                        key={item._id + item.size}
                         className="py-6 flex flex-col sm:flex-row gap-4"
                       >
                         {/* Product Image */}
                         <div className="w-full sm:w-1/6 flex-shrink-0">
                           <Link
-                            to={`/product/${item.id}`}
+                            to={`/product/${item._id}`}
                             className="block aspect-square overflow-hidden rounded-md"
                           >
                             <img
@@ -140,13 +140,13 @@ const CartPage = () => {
                                 {item.brand}
                               </span>
                               <h3 className="text-lg font-medium text-gray-800 hover:text-red-600 transition-colors">
-                                <Link to={`/product/${item.id}`}>
+                                <Link to={`/product/${item._id}`}>
                                   {item.name}
                                 </Link>
                               </h3>
                             </div>
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item)}
                               className="text-gray-400 hover:text-red-500 transition-colors"
                               aria-label="Remove item"
                             >
@@ -162,20 +162,20 @@ const CartPage = () => {
 
                             <div className="flex items-center border border-gray-300 rounded-md w-fit">
                               <button
-                                onClick={() => decrementQuantity(item.id)}
+                                onClick={() => decrementQuantity(item)}
                                 className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                disabled={item.quantity <= 1}
+                                disabled={item.qty <= 1}
                                 aria-label="Decrease quantity"
                               >
                                 <FiMinus />
                               </button>
                               <span className="px-4 py-1 text-center w-12">
-                                {item.quantity}
+                                {item.qty}
                               </span>
                               <button
-                                onClick={() => incrementQuantity(item.id)}
+                                onClick={() => incrementQuantity(item)}
                                 className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                disabled={item.quantity >= item.stock}
+                                disabled={item.qty >= item.countInStock}
                                 aria-label="Increase quantity"
                               >
                                 <FiPlus />
@@ -183,7 +183,7 @@ const CartPage = () => {
                             </div>
 
                             <div className="text-lg font-bold text-gray-800">
-                              Rs {(item.price * item.quantity).toFixed(2)}
+                              Rs {(item.price * item.qty).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -200,7 +200,7 @@ const CartPage = () => {
                       ← Continue Shopping
                     </Link>
                     <button
-                      onClick={clearCart}
+                      onClick={handleClearCart}
                       className="text-red-600 hover:text-red-700 font-medium transition-colors"
                     >
                       Clear Cart
@@ -222,7 +222,7 @@ const CartPage = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600">
-                      Subtotal ({itemCount} items)
+                      Subtotal ({uniqueProductCount} items)
                     </span>
                     <span className="font-medium">
                       Rs {subtotal.toFixed(2)}

@@ -3,6 +3,9 @@ import React from 'react';
 import security from '../../../src/assets/shield.png';
 import OtpInput from '../../components/OTPbox';
 
+  
+
+
 const Verify = () => {
   return (
     <section className="section py-10 rounded-md shadow-md">

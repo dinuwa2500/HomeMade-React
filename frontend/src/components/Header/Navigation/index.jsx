@@ -1,10 +1,10 @@
-import { Button } from '@mui/material';
-import React, { useState } from 'react';
-import { RiMenu2Fill } from 'react-icons/ri';
-import { LiaAngleDownSolid } from 'react-icons/lia';
-import { Link } from 'react-router-dom';
-import { GoRocket } from 'react-icons/go';
-import CategoryPanel from './CategoryPanel';
+import { Button } from "@mui/material";
+import React, { useState } from "react";
+import { RiMenu2Fill } from "react-icons/ri";
+import { LiaAngleDownSolid } from "react-icons/lia";
+import { Link } from "react-router-dom";
+import { GoRocket } from "react-icons/go";
+import CategoryPanel from "./CategoryPanel";
 
 const Navigation = () => {
   const [isOpenCategoryPanel, setIsOpenCategoryPanel] = useState(false);
@@ -15,12 +15,12 @@ const Navigation = () => {
   };
 
   const fashionSubcategories = [
-    { name: "Men's Fashion", link: '/fashion/mens' },
-    { name: "Women's Fashion", link: '/fashion/womens' },
-    { name: 'Kids Fashion', link: '/fashion/kids' },
-    { name: 'Accessories', link: '/fashion/accessories' },
-    { name: 'Footwear', link: '/fashion/footwear' },
-    { name: 'Jewelry', link: '/fashion/jewelry' },
+    { name: "Men's Fashion", link: "/fashion/mens" },
+    { name: "Women's Fashion", link: "/fashion/womens" },
+    { name: "Kids Fashion", link: "/fashion/kids" },
+    { name: "Accessories", link: "/fashion/accessories" },
+    { name: "Footwear", link: "/fashion/footwear" },
+    { name: "Jewelry", link: "/fashion/jewelry" },
   ];
 
   return (
@@ -29,7 +29,7 @@ const Navigation = () => {
         <div className="container flex items-center justify-end">
           <div className="col_1 w-[20%] font-bold">
             <Button className="!text-black gap-2 " onClick={openCategoryPanel}>
-              {' '}
+              {" "}
               <RiMenu2Fill className="text-[20px]" />
               Shop By Category
               <LiaAngleDownSolid className="text-[15px] ml-auto font-bold" />
@@ -57,7 +57,6 @@ const Navigation = () => {
                   >
                     <Button className="!text-black transition text-capitalize font-bold">
                       Fashions
-             
                     </Button>
                   </Link>
 

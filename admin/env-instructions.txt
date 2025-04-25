@@ -1,0 +1,5 @@
+Create or update your .env file in the admin directory with:
+
+VITE_BACKEND_URI=http://localhost:8000
+
+Make sure to restart your admin development server after adding this.

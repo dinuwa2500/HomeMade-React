@@ -1,23 +1,23 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Provide name'],
+      required: [true, "Provide name"],
     },
     email: {
       type: String,
-      required: [true, 'Provide email'],
+      required: [true, "Provide email"],
       unique: true,
     },
     password: {
       type: String,
-      required: [true, 'Provide password'],
+      required: [true, "Provide password"],
     },
     avatar: {
       type: String,
-      default: '',
+      default: "",
     },
     mobile: {
       type: Number,
@@ -30,11 +30,11 @@ const userSchema = new mongoose.Schema(
 
     access_token: {
       type: String,
-      default: '',
+      default: "",
     },
     refresh_token: {
       type: String,
-      default: '',
+      default: "",
     },
     last_login_date: {
       type: Date,
@@ -48,25 +48,46 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Active', 'Inactive', 'Suspended'],
-      default: 'Active',
+      enum: ["Active", "Inactive", "Suspended"],
+      default: "Active",
+    },
+    address: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "",
+    },
+    country: {
+      type: String,
+      default: "",
+    },
+    dob: {
+      type: Date,
+      default: null,
+    },
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other", ""],
+      default: "",
     },
     address_details: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'address',
+        ref: "address",
       },
     ],
     shopping_cart: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'cartProduct',
+        ref: "cartProduct",
       },
     ],
     orderHistoty: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'order',
+        ref: "order",
       },
     ],
     forgot_password_otp: {
@@ -79,14 +100,26 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['ADMIN', 'USER', 'DRIVER'], // ✅ added DRIVER role
-      default: 'USER',
+      enum: ["customer", "admin", "driver", "user"],
+      default: "user",
+    },
+    twoFaEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFaEmailCode: {
+      type: String,
+      default: null,
+    },
+    twoFaCodeExpires: {
+      type: Date,
+      default: null,
     },
   },
   {
-    timestamps: true, // ✅ fixed typo
+    timestamps: true,
   }
 );
 
-const UserModel = mongoose.model('User', userSchema);
+const UserModel = mongoose.model("user", userSchema);
 export default UserModel;

@@ -12,21 +12,16 @@ const orderSchema = new mongoose.Schema(
       required: [true, 'Provide orderId'],
       unique: true,
     },
-    productId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'product',
-      required: true,
-    },
-    product_details: {
-      name: {
-        type: String,
-        required: true,
-      },
-      image: {
-        type: [String],
-        default: [],
-      },
-    },
+    items: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'product', required: true },
+        name: String,
+        image: [String],
+        size: String,
+        qty: Number,
+        price: Number,
+      }
+    ],
     paymentId: {
       type: String,
       default: '',
@@ -36,8 +31,7 @@ const orderSchema = new mongoose.Schema(
       default: '',
     },
     delivery_address: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'address',
+      type: String,
       required: true,
     },
     subTotalAmt: {
@@ -48,7 +42,24 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-  
+    status: {
+      type: String,
+      enum: ['pending_payment', 'to_delivery', 'delivering', 'delivered', 'cancelled'],
+      default: 'pending_payment',
+    },
+    paymentSlipUploaded: {
+      type: Boolean,
+      default: false,
+    },
+    paymentSlip: {
+      type: String, // file URL or path
+      default: '',
+    },
+    delivery: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user', // references a delivery user
+      default: null,
+    },
   },
   {
     timestamps: true,

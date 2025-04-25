@@ -1,17 +1,23 @@
-import { TextField, InputAdornment, IconButton, Button } from '@mui/material';
-import React, { useState, useEffect } from 'react';
-import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
-import { Link } from 'react-router-dom';
-import { FcGoogle } from 'react-icons/fc';
+import { TextField, InputAdornment, IconButton, Button } from "@mui/material";
+import React, { useState, useEffect, useContext } from "react";
+import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import { Link } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import { postData } from "../api";
+import MyContext from "../../context";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
+  const context = useContext(MyContext);
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [formFields, setFormFields] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -19,7 +25,7 @@ const Register = () => {
 
   useEffect(() => {
     const allFieldsFilled = Object.values(formFields).every(
-      (value) => value.trim() !== ''
+      (value) => value.trim() !== ""
     );
     const noErrors = Object.values(errors).every((error) => !error);
     setIsFormValid(allFieldsFilled && noErrors);
@@ -46,41 +52,66 @@ const Register = () => {
 
   const validateField = (id, value, allValues) => {
     switch (id) {
-      case 'name':
-        if (!value.trim()) return 'Full name is required';
-        if (value.length < 3) return 'Name must be at least 3 characters';
-        if (/\d/.test(value)) return 'Name cannot contain numbers';
-        return '';
-      case 'email':
-        if (!value.trim()) return 'Email is required';
+      case "name":
+        if (!value.trim()) return "Full name is required";
+        if (value.length < 3) return "Name must be at least 3 characters";
+        if (/\d/.test(value)) return "Name cannot contain numbers";
+        return "";
+      case "email":
+        if (!value.trim()) return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-          return 'Invalid email address';
-        return '';
-      case 'phone':
-        if (!value.trim()) return 'Phone number is required';
-        if (!/^\d{10}$/.test(value)) return 'Phone number must be 10 digits';
-        return '';
-      case 'password':
-        if (!value.trim()) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
-        return '';
-      case 'confirmPassword':
-        if (!value.trim()) return 'Confirm password is required';
-        if (value !== allValues.password) return 'Passwords do not match';
-        return '';
+          return "Invalid email address";
+        return "";
+      case "phone":
+        if (!value.trim()) return "Phone number is required";
+        if (!/^\d{10}$/.test(value)) return "Phone number must be 10 digits";
+        return "";
+      case "password":
+        if (!value.trim()) return "Password is required";
+        if (value.length < 6) return "Password must be at least 6 characters";
+        return "";
+      case "confirmPassword":
+        if (!value.trim()) return "Confirm password is required";
+        if (value !== allValues.password) return "Passwords do not match";
+        return "";
       default:
-        return '';
+        return "";
     }
   };
 
   const sxHideDefaultIcons = {
-    '& input::-ms-clear, & input::-ms-reveal': {
-      display: 'none',
+    "& input::-ms-clear, & input::-ms-reveal": {
+      display: "none",
     },
-    '& input::-webkit-credentials-auto-fill-button': {
-      display: 'none',
-      visibility: 'hidden',
+    "& input::-webkit-credentials-auto-fill-button": {
+      display: "none",
+      visibility: "hidden",
     },
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Important!
+
+    try {
+      const response = await postData("/api/users/register", formFields);
+
+      console.log(response);
+
+      if (response.success) {
+        context.Toast("success", "User registered successfully!");
+        localStorage.setItem("userEmail", formFields.email);
+
+        // Wait 3 seconds, then redirect
+        setTimeout(() => {
+          navigate("/verify");
+        }, 1000);
+      } else {
+        context.Toast("error", response.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      context.Toast("error", "Something went wrong");
+    }
   };
 
   return (
@@ -90,7 +121,7 @@ const Register = () => {
           <h3 className="text-center text-[20px] font-semibold text-black mb-6">
             Create a new account
           </h3>
-          <form className="w-full">
+          <form className="w-full" onSubmit={handleSubmit}>
             {/* Full Name */}
             <div className="form-group w-full mb-5">
               <TextField
@@ -139,7 +170,7 @@ const Register = () => {
                 onBlur={handleBlur}
                 error={!!errors.phone}
                 helperText={
-                  errors.phone || 'Enter 10 digit number (e.g., 9876543210)'
+                  errors.phone || "Enter 10 digit number (e.g., 9876543210)"
                 }
                 inputProps={{ maxLength: 10 }}
               />
@@ -150,7 +181,7 @@ const Register = () => {
               <TextField
                 id="password"
                 label="Password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 variant="outlined"
                 className="w-full"
                 autoComplete="new-password"
@@ -181,7 +212,7 @@ const Register = () => {
               <TextField
                 id="confirmPassword"
                 label="Confirm Password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 variant="outlined"
                 className="w-full"
                 autoComplete="new-password"
@@ -214,8 +245,8 @@ const Register = () => {
                 disabled={!isFormValid}
                 className={`w-full h-[45px] !cursor-pointer ${
                   isFormValid
-                    ? '!bg-blue-600 hover:!bg-blue-700'
-                    : '!bg-gray-400 cursor-not-allowed'
+                    ? "!bg-blue-600 hover:!bg-blue-700"
+                    : "!bg-gray-400 cursor-not-allowed"
                 } !text-white py-2 px-4 rounded-md transition duration-200 ease-in-out font-semibold text-sm`}
               >
                 Register
@@ -240,7 +271,7 @@ const Register = () => {
                 type="button"
                 className="w-full h-[45px] !cursor-pointer !bg-gray-200 !text-black py-2 px-4 rounded-md hover:!bg-gray-300 transition duration-200 ease-in-out font-semibold text-sm"
               >
-                Login with Google
+                Sign Up with Google
               </Button>
             </div>
           </form>

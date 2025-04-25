@@ -8,11 +8,11 @@ const __dirname = path.dirname(__filename);
 const removeFile = (filename) => {
     fs.unlink(path.join(__dirname, '../uploads', filename), function(err){
         if (err && err.code !== 'ENOENT') {
-            console.log(`Filename ${filename} not found, won't remove`);
+            // File not found, won't remove
         } else if (err) {
-            console.log(`Error removing file ${filename}: ${err}`);
+            // Error removing file
         } else {
-            console.log(`File ${filename} removed successfully`);
+            // File removed successfully
         }
     });
 };

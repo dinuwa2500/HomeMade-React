@@ -1,34 +1,34 @@
-import UserModel from '../models/user.model.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import axios from 'axios';
-import { sendEmailFun } from '../config/emailService.js';
-import verificationEmail from '../utilities/VerifyEmailTemplate.js';
-import generatedAccessToken from '../utilities/generateAccessToken.js';
-import generatedRefreshToken from '../utilities/generateRefreshToken.js';
-import { v2 as cloudinary } from 'cloudinary';
-import fs from 'fs';
+import UserModel from "../models/user.model.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import axios from "axios";
+import fs from "fs";
+import { sendEmailFun } from "../config/emailService.js";
+import verificationEmail from "../utilities/VerifyEmailTemplate.js";
+import generatedAccessToken from "../utilities/generateAccessToken.js";
+import generatedRefreshToken from "../utilities/generateRefreshToken.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // Configuration
 cloudinary.config({
-  cloud_name: 'dinuwapvt',
-  api_key: '487264227394868',
-  api_secret: 'LuuDPSUEt53s0YYBfJMf6HuFiJg', // Click 'View API Keys' above to copy your API secret
+  cloud_name: "dinuwapvt",
+  api_key: "487264227394868",
+  api_secret: "LuuDPSUEt53s0YYBfJMf6HuFiJg", // Click 'View API Keys' above to copy your API secret
   secure: true,
   timeout: 60000, // Increase timeout to 60 seconds
 });
 
-console.log('Cloudinary config:', cloudinary.config());
+console.log("Cloudinary config:", cloudinary.config());
 
 export async function registerUserController(request, response) {
   try {
     let user;
-    const { name, email, password } = request.body;
+    const { name, email, password, role } = request.body;
     // Debug: Log the incoming request body
-    console.log('Request Body:', request.body);
+    console.log("Request Body:", request.body);
     if (!name || !email || !password) {
       return response.status(400).json({
-        message: 'provide email name password',
+        message: "provide email name password",
         error: true,
         success: false,
       });
@@ -38,35 +38,49 @@ export async function registerUserController(request, response) {
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return response.status(400).json({
-        message: 'User already exists with this email',
+        message: "User already exists with this email",
         error: true,
         success: false,
       });
     }
 
-    const verifycode = Math.floor(100000 + Math.random() * 90000).toString();
-
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    user = new UserModel({
-      name,
-      email,
-      password: hashPassword,
-      otp: verifycode,
-      otpExpires: Date.now() + 60000,
-    });
+    // Admin registration: set role and verify_email
+    if (role === "admin") {
+      user = new UserModel({
+        name,
+        email,
+        password: hashPassword,
+        role: "admin",
+        verify_email: true,
+      });
+    } else {
+      // Regular user registration
+      const verifycode = Math.floor(100000 + Math.random() * 90000).toString();
+      user = new UserModel({
+        name,
+        email,
+        password: hashPassword,
+        otp: verifycode,
+        role: "user",
+        otpExpires: Date.now() + 60000,
+      });
+    }
     await user.save();
 
     // console.log('Sending email to:', email); // Log the email being passed
 
     //send verification email
-    const verifyEmail = await sendEmailFun({
-      to: email,
-      subject: 'Verify Email from Craftopia',
-      text: '', // Optional plain text version
-      html: verificationEmail(name, verifycode), // The HTML template
-    });
+    if (role !== "admin") {
+      const verifyEmail = await sendEmailFun({
+        to: email,
+        subject: "Verify Email from Craftopia",
+        text: "", // Optional plain text version
+        html: verificationEmail(name, user.otp), // The HTML template
+      });
+    }
 
     //jwt token
     const token = jwt.sign(
@@ -76,8 +90,9 @@ export async function registerUserController(request, response) {
 
     return response.status(200).json({
       success: true,
-      message: 'User registered successfully, please verify email',
+      message: "User registered successfully, please verify email",
       token: token,
+      user: user,
       error: false,
     });
   } catch (error) {
@@ -99,7 +114,7 @@ export async function verifyEmailController(request, response) {
       return response.status(400).json({
         error: true,
         success: false,
-        message: 'User not found!',
+        message: "User not found!",
       });
     }
 
@@ -110,7 +125,7 @@ export async function verifyEmailController(request, response) {
       return response.status(400).json({
         error: true,
         success: false,
-        message: 'Invalid OTP',
+        message: "Invalid OTP",
       });
     }
 
@@ -118,7 +133,7 @@ export async function verifyEmailController(request, response) {
       return response.status(400).json({
         error: true,
         success: false,
-        message: 'OTP has expired',
+        message: "OTP has expired",
       });
     }
 
@@ -130,15 +145,15 @@ export async function verifyEmailController(request, response) {
       return response.status(200).json({
         error: false,
         success: true,
-        message: 'Email verified successfully!',
+        message: "Email verified successfully!",
       });
     }
   } catch (error) {
-    console.error('Error in verifyEmailController:', error);
+    console.error("Error in verifyEmailController:", error);
     return response.status(500).json({
       error: true,
       success: false,
-      message: 'Internal server error',
+      message: "Internal server error",
     });
   }
 }
@@ -151,7 +166,7 @@ export async function loginUser(request, response) {
 
     if (!user) {
       return response.status(400).json({
-        message: 'User not registered',
+        message: "User not registered",
         error: true,
         success: false,
       });
@@ -159,15 +174,15 @@ export async function loginUser(request, response) {
 
     if (!user.verify_email) {
       return response.status(400).json({
-        message: 'Please verify your email first',
+        message: "Please verify your email first",
         error: true,
         success: false,
       });
     }
 
-    if (user.status !== 'Active') {
+    if (user.status !== "Active") {
       return response.status(400).json({
-        message: 'Contact admin, your account is not active',
+        message: "Contact admin, your account is not active",
         error: true,
         success: false,
       });
@@ -177,9 +192,31 @@ export async function loginUser(request, response) {
 
     if (!checkPassword) {
       return response.status(400).json({
-        message: 'Incorrect password',
+        message: "Incorrect password",
         error: true,
         success: false,
+      });
+    }
+
+    // 2FA logic
+    if (user.twoFaEnabled) {
+      // Generate a new 2FA code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      user.twoFaEmailCode = code;
+      user.twoFaCodeExpires = Date.now() + 5 * 60 * 1000; // 5 min expiry
+      await user.save();
+      // Send code via email (replace with your email logic)
+      await sendEmailFun({
+        to: user.email,
+        subject: "2Fa Email from Craftopia",
+        text: "", // Optional plain text version
+        html: verificationEmail(user.name, code), // The HTML template
+      });
+      return response.status(200).json({
+        success: false,
+        twofa: true,
+        message: "2FA required. Code sent to your email.",
+        userId: user._id,
       });
     }
 
@@ -193,24 +230,25 @@ export async function loginUser(request, response) {
     const cookieOptions = {
       httpOnly: true,
       secure: true,
-      sameSite: 'None',
+      sameSite: "None",
     };
 
-    response.cookie('accesstoken', accesstoken, cookieOptions);
-    response.cookie('refreshtoken', refreshtoken, cookieOptions);
+    response.cookie("accesstoken", accesstoken, cookieOptions);
+    response.cookie("refreshtoken", refreshtoken, cookieOptions);
 
     return response.status(200).json({
       success: true,
-      message: 'Login successful',
+      user: user,
+      message: "Login successful",
       data: {
         accesstoken,
         refreshtoken,
       },
     });
   } catch (error) {
-    console.error('Error in loginUser:', error);
+    console.error("Error in loginUser:", error);
     return response.status(500).json({
-      message: error.message || 'Internal server error',
+      message: error.message || "Internal server error",
       error: true,
       success: false,
     });
@@ -225,118 +263,114 @@ export async function logoutUser(request, response) {
       return response.status(400).json({
         success: false,
         error: true,
-        message: 'No refresh token provided',
+        message: "No refresh token provided",
       });
     }
 
     // Clear cookies
-    response.clearCookie('accesstoken');
-    response.clearCookie('refreshtoken');
+    response.clearCookie("accesstoken");
+    response.clearCookie("refreshtoken");
 
     // Find user by refresh token and clear it from database
-    const user = await UserModel.findOneAndUpdate({ refresh_token: '' });
-    L;
-
+    const user = await UserModel.findOneAndUpdate({ refresh_token: "" });
     if (!user) {
       return response.status(200).json({
         success: true,
         error: false,
-        message: 'Logged out successfully',
+        message: "Logged out successfully",
       });
     }
 
     return response.status(200).json({
       success: true,
       error: false,
-      message: 'Logged out successfully',
+      message: "Logged out successfully",
     });
   } catch (error) {
-    console.error('Error in logoutUser:', error);
+    console.error("Error in logoutUser:", error);
     return response.status(500).json({
       success: false,
       error: true,
-      message: error.message || 'Internal server error',
+      message: error.message || "Internal server error",
     });
   }
 }
 
 // Avatar controller
 
-const IMGUR_CLIENT_ID = '4a7ef9e565dbe94'; // Replace with your actual Imgur Client ID
+const IMGUR_CLIENT_ID = "4a7ef9e565dbe94"; // Replace with your actual Imgur Client ID
 
 export async function userAvatarController(request, response) {
   try {
     const userId = request.user.id;
-    const images = request.files;
-    const imageArr = [];
+    const file = request.file;
 
-    if (!images || images.length === 0) {
+    if (!file) {
       return response.status(400).json({
         success: false,
         error: true,
-        message: 'No files uploaded',
+        message: "No file uploaded",
       });
     }
 
     const user = await UserModel.findOne({ _id: userId });
 
-    const userAvatar = user.avatar;
-
     if (!user) {
-      // If user is not found, send a 404 response
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    for (const file of images) {
-      try {
-        const base64Image = fs.readFileSync(file.path, { encoding: 'base64' });
-
-        const uploadRes = await axios.post(
-          'https://api.imgur.com/3/image',
-          {
-            image: base64Image,
-            type: 'base64',
-          },
-          {
-            headers: {
-              Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,
-            },
-          }
-        );
-
-        imageArr.push(uploadRes.data.data.link);
-
-        // Remove local file after upload
+      // Clean up uploaded file if user not found
+      if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
-      } catch (uploadError) {
-        console.error('Imgur upload error:', uploadError.message);
-        continue;
       }
+      return response.status(404).json({ message: "User not found" });
     }
 
-    if (imageArr.length === 0) {
-      return response.status(500).json({
-        success: false,
-        error: true,
-        message: 'Failed to upload any files',
+    try {
+      // Read image as base64
+      const base64Image = fs.readFileSync(file.path, { encoding: "base64" });
+
+      const uploadRes = await axios.post(
+        "https://api.imgur.com/3/image",
+        {
+          image: base64Image,
+          type: "base64",
+        },
+        {
+          headers: {
+            Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,
+          },
+        }
+      );
+
+      // Remove local file after successful upload
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      const imageUrl = uploadRes.data.data.link;
+
+      user.avatar = imageUrl;
+      await user.save();
+
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Image uploaded successfully",
+        _id: userId,
+        avatar: user.avatar,
       });
+    } catch (uploadError) {
+      // Clean up file on upload error
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
-    user.avatar = imageArr[0]; // Set the first image URL as the avatar
-    await user.save(); // Save the updated user document
-    return response.status(200).json({
-      success: true,
-      error: false,
-      message: 'Images uploaded successfully',
-      _id: userId,
-      avatar: user.avatar, // Send the updated avatar URL
-    });
   } catch (error) {
-    console.error('Controller error:', error.message);
+    console.error("Controller error:", error);
     return response.status(500).json({
       success: false,
       error: true,
-      message: 'Internal server error',
-      details: error.message,
+      message: "Internal server error",
+      details: error.message || "Unknown error occurred",
     });
   }
 }
@@ -355,15 +389,15 @@ export async function deleteImgurImage(deleteHash) {
 
     return {
       success: true,
-      message: 'Image deleted successfully',
+      message: "Image deleted successfully",
       status: response.status,
       data: response.data,
     };
   } catch (error) {
-    console.error('Imgur delete error:', error.response?.data || error.message);
+    console.error("Imgur delete error:", error.response?.data || error.message);
     return {
       success: false,
-      message: 'Failed to delete image',
+      message: "Failed to delete image",
       details: error.response?.data || error.message,
     };
   }
@@ -371,69 +405,427 @@ export async function deleteImgurImage(deleteHash) {
 
 export async function UserDetailsUpdate(request, response) {
   try {
-    const userId = request.user.id;
-    const { name, email, password, mobile } = request.body;
+    // Use either _id or id from the user object for robustness
+    const userId = request.user._id || request.user.id;
+    const {
+      name,
+      password,
+      mobile,
+      address,
+      city,
+      country,
+      dob,
+      gender,
+      role,
+    } = request.body;
 
     const userExist = await UserModel.findById(userId);
-
-    console.log(userId);
-
     if (!userExist) {
       return response.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
-    let verifycode = '';
+    let updateFields = {
+      name: name || userExist.name,
+      mobile: mobile || userExist.mobile,
+      email: userExist.email,
+      verify_email: userExist.verify_email,
+      otp: userExist.otp,
+      otpExpires: userExist.otpExpires,
+      address: address || userExist.address,
+      city: city || userExist.city,
+      country: country || userExist.country,
+      dob: dob || userExist.dob,
+      gender: gender || userExist.gender,
+      role: role || userExist.role,
+    };
 
-    if (userExist.email) {
-      verifycode = Math.floor(100000 + Math.random() * 90000).toString();
-    }
-
-    let hashPassword = '';
+    // Only update password if provided
     if (password) {
       const salt = await bcrypt.genSalt(10);
-      hashPassword = await bcrypt.hash(password, salt);
+      updateFields.password = await bcrypt.hash(password, salt);
     } else {
-      hashPassword = userExist.password;
+      updateFields.password = userExist.password;
     }
-    const updateUser = await UserModel.findByIdAndUpdate(
-      userId,
-      {
-        name: name,
-        mobile: mobile,
-        email: email,
-        verify_email: email ? false : true,
-        password: hashPassword,
-        otp: verifycode !== '' ? verifycode : null,
-        otpExpires: verifycode !== '' ? Date.now() + 600000 : null,
-      },
-      {
-        new: true,
-      }
-    );
 
-    //send verification email
-    const verifyEmail = await sendEmailFun({
-      to: email,
-      subject: 'Verify Email from Craftopia',
-      text: '', // Optional plain text version
-      html: verificationEmail(name, verifycode), // The HTML template
+    const updateUser = await UserModel.findByIdAndUpdate(userId, updateFields, {
+      new: true,
     });
-    console.log(verifycode);
+
     return response.json({
       success: true,
       error: false,
-      message: 'User details updated successfully',
+      message: "User details updated successfully",
       user: updateUser,
     });
   } catch (error) {
-    console.error('Error updating user details:', error);
+    console.error("Error updating user details:", error);
     return response.status(500).json({
       success: false,
-      message: 'Failed to update user details',
+      message: "Failed to update user details",
       error: error.message,
+    });
+  }
+}
+
+export async function forgotPassword(request, response) {
+  try {
+    const { email, role } = request.body;
+
+    const user = await UserModel.findOne({ email: email });
+
+    if (!user) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found with this email address",
+      });
+    }
+
+    let verifycode = Math.floor(100000 + Math.random() * 90000).toString();
+
+    user.otp = verifycode;
+    user.otpExpires = Date.now() + 600000;
+
+    await user.save();
+
+    const verifyEmail = await sendEmailFun({
+      to: email,
+      subject: "Password reset OTP",
+      text: "", // Optional plain text version
+      html: verificationEmail(user.name, verifycode), // The HTML template
+    });
+
+    return response.status(200).json({
+      success: true,
+      message: "Password reset OTP sent to your email",
+      otp: verifycode,
+    });
+  } catch (error) {
+    console.error("Error in forgot password:", error);
+    return response.status(500).json({
+      success: false,
+      message: "Failed to process forgot password request",
+      error: error.message,
+    });
+  }
+}
+
+export async function verifyForgotPasswordOtp(request, response) {
+  try {
+    const { email, otp } = request.body;
+    const user = await UserModel.findOne({ email: email });
+
+    if (!email || !otp) {
+      return response.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
+
+    if (!user) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found with this email address",
+      });
+    }
+
+    if (otp !== user.otp) {
+      return response.status(400).json({
+        success: false,
+        message: "Invalid OTP code",
+      });
+    }
+
+    if (user.otpExpires < Date.now()) {
+      return response.status(400).json({
+        success: false,
+        message: "OTP has expired",
+      });
+    }
+
+    // Clear the OTP after successful verification
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    return response.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  } catch (error) {
+    console.error("Error in verifyForgotPasswordOtp:", error);
+    return response.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+//reset password
+export async function resetpass(request, response) {
+  try {
+    const { email, newPassword, confirmPassword } = request.body;
+
+    if ((!email || !newPassword, !confirmPassword)) {
+      return response.status(400).json({
+        success: false,
+        message: "Email and new password are required",
+      });
+    }
+
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user's password and clear OTP fields
+    user.password = hashPassword;
+    user.forgot_password_otp = null;
+    user.forgot_password_expiry = null;
+    await user.save();
+
+    return response.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error("Error in resetpass:", error);
+    return response.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+//refresh token
+export async function refreshToken(request, response) {
+  try {
+    const { refreshToken } = request.cookies.refreshtoken;
+
+    if (!refreshToken) {
+      return response.status(400).json({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
+    // Verify the refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Find user by ID from decoded token
+    const user = await UserModel.findById(decoded.id);
+    if (!user) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Generate new access token
+    const accessToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    return response.status(200).json({
+      success: true,
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Error in refreshToken:", error);
+    return response.status(401).json({
+      success: false,
+      message: "Invalid refresh token",
+      error: error.message,
+    });
+  }
+}
+
+//get login user details
+
+export async function getLoginUserDetails(request, response) {
+  try {
+    const userId = request.user.id;
+
+    const user = await UserModel.findById(userId).select(
+      "-password -refresh_token"
+    );
+
+    if (!user) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return response.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Error in getLoginUserDetails:", error);
+    return response.status(500).json({
+      success: false,
+      message: "Error fetching user details",
+      error: error.message,
+    });
+  }
+}
+
+export async function deleteUser(request, response) {
+  try {
+    const userId = request.user._id || request.user.id;
+    const deletedUser = await UserModel.findByIdAndDelete(userId);
+    if (!deletedUser) {
+      return response.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return response.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return response.status(500).json({
+      success: false,
+      message: "Failed to delete user",
+      error: error.message,
+    });
+  }
+}
+
+// Get all users, filter by role if provided
+export async function getUsers(request, response) {
+  try {
+    const { role } = request.query;
+    let query = {};
+    if (role) query.role = role;
+    const users = await UserModel.find(query);
+    response.json({ success: true, users });
+  } catch (error) {
+    response.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.message,
+    });
+  }
+}
+
+// --- 2FA EMAIL: SEND CODE ---
+export async function send2faCode(req, res) {
+  try {
+    const userId = req.user?.id || req.body.userId; // Adjust as needed for your auth
+    const user = await UserModel.findById(userId);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    user.twoFaEmailCode = code;
+    user.twoFaCodeExpires = Date.now() + 600000;
+    await user.save();
+    await sendEmailFun({
+      to: user.email,
+      subject: "2Fa Email from Craftopia",
+      text: "", // Optional plain text version
+      html: verificationEmail(user.name, code), // The HTML template
+    });
+    res.json({
+      success: true,
+      message: "Verification code sent to your email.",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to send 2FA code",
+      error: err.message,
+    });
+  }
+}
+
+// --- 2FA EMAIL: VERIFY CODE ---
+export async function verify2faCode(req, res) {
+  try {
+    const userId = req.user?.id || req.body.userId;
+    const { code, enableTwoFa } = req.body;
+    const user = await UserModel.findById(userId);
+    if (
+      !user ||
+      user.twoFaEmailCode !== code ||
+      !user.twoFaCodeExpires ||
+      user.twoFaCodeExpires < Date.now()
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired code" });
+    }
+    user.twoFaEmailCode = null;
+    user.twoFaCodeExpires = null;
+    // Set twoFaEnabled to true when verifying the code
+    if (enableTwoFa) {
+      user.twoFaEnabled = true;
+    }
+    // Issue tokens
+    const accesstoken = await generatedAccessToken(user._id);
+    const refreshtoken = await generatedRefreshToken(user._id);
+    await user.save();
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+    res.cookie("accesstoken", accesstoken, cookieOptions);
+    res.cookie("refreshtoken", refreshtoken, cookieOptions);
+    res.json({
+      success: true,
+      message: "2FA verified. Login successful.",
+      data: {
+        accesstoken,
+        refreshtoken,
+      },
+      user: user,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify 2FA code",
+      error: err.message,
+    });
+  }
+}
+
+// --- 2FA EMAIL: DISABLE ---
+export async function disable2fa(req, res) {
+  try {
+    const userId = req.user?.id || req.body.userId;
+    const user = await UserModel.findById(userId);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    user.twoFaEnabled = false;
+    user.twoFaEmailCode = null;
+    await user.save();
+    res.json({ success: true, message: "Two-factor authentication disabled." });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to disable 2FA",
+      error: err.message,
     });
   }
 }

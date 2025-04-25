@@ -1,78 +1,34 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
+
+const API_URL = import.meta.env.VITE_BACKEND_URI || "http://localhost:8000";
+const backendUrl = import.meta.env.VITE_BACKEND_URI || "http://localhost:8000";
 
 const Orders = () => {
-  // Dummy order data
-  const orders = [
-    {
-      id: 'ORD-2023-001',
-      date: '2023-05-15',
-      status: 'Delivered',
-      total: 5245.0,
-      items: [
-        {
-          id: 1,
-          name: 'Handwoven Cotton Sarong',
-          price: 2500.0,
-          quantity: 1,
-          image:
-            'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
-          deliveredOn: '2023-05-18',
-        },
-        {
-          id: 2,
-          name: 'Ceylon Spice Gift Pack',
-          price: 2745.0,
-          quantity: 1,
-          image:
-            'https://img.drz.lazcdn.com/static/lk/p/bd72b669af3b6e229dbc2b90ced263d9.jpg_400x400q75.avif',
-          deliveredOn: '2023-05-18',
-        },
-      ],
-    },
-    {
-      id: 'ORD-2023-002',
-      date: '2023-06-22',
-      status: 'Shipped',
-      total: 3890.0,
-      items: [
-        {
-          id: 3,
-          name: 'Traditional Wooden Mask',
-          price: 1890.0,
-          quantity: 1,
-          image:
-            'https://img.drz.lazcdn.com/static/lk/p/23ffb6983d8b8d6d935c522c2b4e3f48.jpg_400x400q75.avif',
-        },
-        {
-          id: 4,
-          name: 'Handmade Ceramic Vase',
-          price: 2000.0,
-          quantity: 1,
-          image:
-            'https://img.drz.lazcdn.com/static/lk/p/91339f8f8341f65fce3a0e9c56d51382.jpg_400x400q75.avif',
-        },
-      ],
-    },
-    {
-      id: 'ORD-2023-003',
-      date: '2023-07-05',
-      status: 'Processing',
-      total: 1450.0,
-      items: [
-        {
-          id: 5,
-          name: 'Pure Ceylon Tea Sampler',
-          price: 1450.0,
-          quantity: 1,
-          image:
-            'https://img.drz.lazcdn.com/static/lk/p/adeb88518b71436e970fe76f09c9d444.jpg_400x400q75.avif',
-        },
-      ],
-    },
-  ];
-
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("accesstoken");
+        const res = await axios.get(`${API_URL}/api/order/myorders`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setOrders(Array.isArray(res.data.orders) ? res.data.orders : []);
+      } catch (err) {
+        Swal.fire({ icon: "error", title: "Failed to fetch your orders" });
+      }
+      setLoading(false);
+    };
+    fetchOrders();
+  }, []);
 
   const toggleOrder = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -80,16 +36,90 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Delivered':
-        return 'bg-green-100 text-green-800';
-      case 'Shipped':
-        return 'bg-blue-100 text-blue-800';
-      case 'Processing':
-        return 'bg-yellow-100 text-yellow-800';
+      case "Delivered":
+        return "bg-green-100 text-green-800";
+      case "Shipped":
+        return "bg-blue-100 text-blue-800";
+      case "Processing":
+        return "bg-yellow-100 text-yellow-800";
+      case "Pending Payment":
+        return "bg-yellow-100 text-yellow-800";
+      case "To Delivery":
+        return "bg-blue-100 text-blue-800";
+      case "Delivering":
+        return "bg-indigo-100 text-indigo-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
+
+  const handleSlipUpload = async (orderId, file) => {
+    const formData = new FormData();
+    formData.append("slip", file);
+    try {
+      const token = localStorage.getItem("accesstoken");
+      const res = await axios.post(
+        `${API_URL}/api/order/${orderId}/slip`,
+        formData,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      Swal.fire({
+        icon: "success",
+        title: "Slip uploaded! Awaiting admin approval.",
+      });
+      const res2 = await axios.get(`${API_URL}/api/order/myorders`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setOrders(res2.data.orders || []);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to upload slip",
+        text: error?.response?.data?.message || "Server error",
+      });
+    }
+  };
+
+  const mappedOrders = orders.map((order) => ({
+    ...order,
+    id: order._id || order.id,
+    date: order.createdAt
+      ? new Date(order.createdAt).toLocaleDateString()
+      : order.date,
+    status:
+      order.status === "pending_payment"
+        ? "Pending Payment"
+        : order.status === "to_delivery"
+        ? "To Delivery"
+        : order.status === "delivering"
+        ? "Delivering"
+        : order.status === "delivered"
+        ? "Delivered"
+        : order.status === "cancelled"
+        ? "Cancelled"
+        : order.status || "Processing",
+    total: order.totalAmt || order.total,
+    items: Array.isArray(order.items)
+      ? order.items.map((item) => ({
+          ...item,
+          id: item.productId || item.id,
+          quantity: item.qty || item.quantity,
+          price: item.price,
+          name: item.name,
+          image:
+            item.image && Array.isArray(item.image)
+              ? item.image[0]
+              : item.image,
+        }))
+      : [],
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -101,7 +131,9 @@ const Orders = () => {
           </p>
         </div>
 
-        {orders.length === 0 ? (
+        {loading ? (
+          <div>Loading...</div>
+        ) : mappedOrders.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -133,7 +165,7 @@ const Orders = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {mappedOrders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white shadow overflow-hidden rounded-lg divide-y divide-gray-200"
@@ -156,16 +188,107 @@ const Orders = () => {
                       >
                         {order.status}
                       </span>
+                      {(order.status === "Pending Payment" ||
+                        order.status === "pending_approval" ||
+                        order.status === "Pending Approval") && (
+                        <div className="mb-6">
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">
+                            Payment Slip
+                          </h5>
+                          {order.paymentSlip ? (
+                            <div className="mb-2">
+                              {order.paymentSlip.match(
+                                /\.(jpg|jpeg|png|gif|webp)$/i
+                              ) ? (
+                                <>
+                                  <img
+                                    src={`${backendUrl}${order.paymentSlip}`}
+                                    alt="Payment Slip"
+                                    className="max-h-32 max-w-xs object-contain border rounded cursor-pointer"
+                                    onClick={() => {
+                                      setLightboxImg(
+                                        `${backendUrl}${order.paymentSlip}`
+                                      );
+                                      setLightboxOpen(true);
+                                    }}
+                                  />
+                                  {lightboxOpen && lightboxImg && (
+                                    <div
+                                      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
+                                      onClick={() => setLightboxOpen(false)}
+                                    >
+                                      <img
+                                        src={lightboxImg}
+                                        alt="Full Payment Slip"
+                                        className="max-h-[90vh] max-w-[90vw] rounded shadow-lg border-4 border-white"
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <a
+                                  href={`${backendUrl}${order.paymentSlip}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-600 underline"
+                                >
+                                  View Uploaded Slip
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const file = e.target.elements.slip.files[0];
+                                if (file) handleSlipUpload(order.orderId, file);
+                              }}
+                            >
+                              <input
+                                type="file"
+                                name="slip"
+                                accept="image/*,application/pdf"
+                                className="block mb-2"
+                                required
+                              />
+                              <button
+                                type="submit"
+                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                              >
+                                Upload Slip
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      )}
+                      {order.status === "pending_payment" ? (
+                        <Link
+                          to={`/payment-slip?orderId=${order.id}`}
+                          className="inline-block px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                        >
+                          Pay
+                        </Link>
+                      ) : order.paymentSlip ? (
+                        <span className="text-green-700 font-semibold">
+                          Slip Uploaded
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
                       <p className="text-lg font-semibold text-gray-900">
-                        Rs {order.total.toFixed(2)}
+                        Rs{" "}
+                        {order.total?.toFixed
+                          ? order.total.toFixed(2)
+                          : order.total}
                       </p>
                       <button
                         onClick={() => toggleOrder(order.id)}
                         className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                       >
                         {expandedOrder === order.id
-                          ? 'Hide details'
-                          : 'View details'}
+                          ? "Hide details"
+                          : "View details"}
                       </button>
                     </div>
                   </div>
@@ -200,7 +323,10 @@ const Orders = () => {
                                 </p>
                               </div>
                               <p className="mt-2 sm:mt-0 text-lg font-semibold text-gray-900">
-                                Rs {item.price.toFixed(2)}
+                                Rs{" "}
+                                {item.price?.toFixed
+                                  ? item.price.toFixed(2)
+                                  : item.price}
                               </p>
                             </div>
                             {item.deliveredOn && (
@@ -221,7 +347,7 @@ const Orders = () => {
                               >
                                 View product
                               </button>
-                              {order.status === 'Delivered' && (
+                              {order.status === "Delivered" && (
                                 <button
                                   type="button"
                                   className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
@@ -240,11 +366,7 @@ const Orders = () => {
                           Shipping Address
                         </h5>
                         <p className="mt-1 text-sm text-gray-500">
-                          123 Main St
-                          <br />
-                          Colombo 01
-                          <br />
-                          Sri Lanka
+                          {order.delivery_address || "No address found"}
                         </p>
                       </div>
                       <div>
@@ -252,10 +374,13 @@ const Orders = () => {
                           Payment Method
                         </h5>
                         <p className="mt-1 text-sm text-gray-500">
-                          Credit card ending in 4242
+                          Cash On Delivery
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                          Total: Rs {order.total.toFixed(2)}
+                          Total: Rs{" "}
+                          {order.total?.toFixed
+                            ? order.total.toFixed(2)
+                            : order.total}
                         </p>
                       </div>
                     </div>

@@ -2,25 +2,25 @@ import React from 'react';
 import { AiOutlineShoppingCart } from 'react-icons/ai';
 import { FaMoneyBillWave, FaRegChartBar } from 'react-icons/fa';
 
-const DashboardBoxes = () => {
+const DashboardBoxes = ({ totalUsers, totalSales, totalRevenue }) => {
   const data = [
     {
-      title: 'New Orders',
-      value: '1,390',
+      title: 'Total users',
+      value: totalUsers,
       icon: <AiOutlineShoppingCart className="text-3xl text-blue-500 cursor-pointer" />,
       bg: 'bg-blue-100',
       hoverBg: 'hover:bg-blue-200',
     },
     {
       title: 'Sales',
-      value: 'Rs. 1,390',
+      value: totalSales,
       icon: <FaMoneyBillWave className="text-3xl text-green-500 " />,
       bg: 'bg-green-100',
       hoverBg: 'hover:bg-green-200',
     },
     {
       title: 'Revenue',
-      value: 'Rs. 12,000',
+      value: `Rs. ${totalRevenue}`,
       icon: <FaRegChartBar className="text-3xl text-purple-500" />,
       bg: 'bg-purple-100',
       hoverBg: 'hover:bg-purple-200',

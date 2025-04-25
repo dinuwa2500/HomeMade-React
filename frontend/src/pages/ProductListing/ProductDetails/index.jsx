@@ -1,30 +1,107 @@
-import React, { useState } from 'react';
-import ProductZoom from '../../../components/ProductZoom';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import { Link } from 'react-router-dom';
-import Rating from '@mui/material/Rating';
-import { Button, TextField } from '@mui/material';
-import QtyBox from '../../../components/QtyBox';
-import { MdAddShoppingCart } from 'react-icons/md';
-import { FaHeart } from 'react-icons/fa';
-import ProductsSlider from '../../../components/ProductsSlider';
+import React, { useState, useEffect } from "react";
+import ProductZoom from "../../../components/ProductZoom";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import { Link, useParams } from "react-router-dom";
+import Rating from "@mui/material/Rating";
+import { Button, TextField } from "@mui/material";
+import { MdAddShoppingCart } from "react-icons/md";
+import { FaHeart } from "react-icons/fa";
+import ProductsSlider from "../../../components/ProductsSlider";
+import { useSelector, useDispatch } from "react-redux";
+import { addToCart } from "../../../features/cartSlice";
+import axios from "axios";
+import { addCartItem as addCartItemAPI } from "../../../features/cartAPI";
 
 const ProductDetails = () => {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
   const [review, setReview] = useState({
-    userName: '',
+    userName: "",
     rating: 0,
-    comment: '',
+    comment: "",
   });
   const [ProductActionIndex, setProductActionIndex] = useState(null);
-  const [activeTab, setActiveTab] = useState('description');
-  const sizes = ['S', 'M', 'L', 'XL'];
+  const [activeTab, setActiveTab] = useState("description");
+  const sizes = ["S", "M", "L", "XL"];
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState("");
+  const user = useSelector((state) => state.user?.userInfo);
+  const dispatch = useDispatch();
+  const [quantity, setQuantity] = useState(1);
 
-  const handleReviewSubmit = () => {
-    // Logic to send review to the server (you can use Axios or Fetch)
-    console.log('Review submitted:', review);
-    // Reset form after submission
-    setReview({ userName: '', rating: 0, comment: '' });
+  useEffect(() => {
+    if (id) {
+      fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URI || "http://localhost:8000"
+        }/api/products/${id}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.product) {
+            setProduct(data.product);
+          }
+        });
+    }
+  }, [id]);
+
+  const handleReviewSubmit = async () => {
+    setReviewError("");
+    setReviewSuccess("");
+    if (!user) {
+      setReviewError("You must be logged in to write a review.");
+      return;
+    }
+    if (!review.rating || !review.comment) {
+      setReviewError("Please provide a rating and comment.");
+      return;
+    }
+    setReviewLoading(true);
+    try {
+      const response = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URI || "http://localhost:8000"
+        }/api/products/${id}/reviews`,
+        { rating: review.rating, comment: review.comment },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      setReviewSuccess("Review submitted successfully!");
+      setProduct((prev) => ({
+        ...prev,
+        reviews: response.data.reviews,
+        rating: response.data.review
+          ? response.data.review.rating
+          : prev.rating,
+      }));
+      setReview({ userName: "", rating: 0, comment: "" });
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Failed to submit review.");
+    } finally {
+      setReviewLoading(false);
+    }
   };
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    const selectedSize = sizes[ProductActionIndex] || sizes[0];
+    if (user && user.token) {
+      await addCartItemAPI(product._id, user.token);
+    }
+    dispatch(
+      addToCart({
+        _id: product._id,
+        name: product.name,
+        image: product.images?.[0],
+        price: product.price,
+        size: selectedSize,
+        qty: quantity,
+        countInStock: product.countInStock,
+      })
+    );
+  };
+
+  if (!product) return <div className="container py-10">Loading...</div>;
 
   return (
     <>
@@ -38,6 +115,7 @@ const ProductDetails = () => {
             <Link to="/fashions" className="text-blue-600">
               Fashion
             </Link>
+            <span>{product.name}</span>
           </Breadcrumbs>
         </div>
       </div>
@@ -48,23 +126,23 @@ const ProductDetails = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Image */}
             <div className="w-full lg:w-1/3">
-              <ProductZoom />
+              <ProductZoom images={product.images} />
             </div>
 
             {/* Product Content */}
             <div className="w-full lg:w-2/3">
-              <h1 className="text-[25px] font-semibold mb-2">
-                Handloom Sarong (Green and Orange)
-              </h1>
+              <h1 className="text-[25px] font-semibold mb-2">{product.name}</h1>
 
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-gray-400">
-                  Brand:{' '}
-                  <span className="font-medium text-black">No Brand</span>
+                  Brand:{" "}
+                  <span className="font-medium text-black">
+                    {product.brand || "No Brand"}
+                  </span>
                 </span>
                 <Rating
                   name="size-small"
-                  defaultValue={4}
+                  value={Number(product.rating) || 0}
                   size="small"
                   readOnly
                 />
@@ -72,17 +150,28 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex items-center gap-4 mt-2 mb-2">
-                <span className="text-[20px] text-[#ca0815]">Rs 1,700.00</span>
+                <span className="text-[20px] text-[#ca0815]">
+                  Rs{" "}
+                  {product.discount && product.discount > 0
+                    ? product.price - (product.price * product.discount) / 100
+                    : product.price}
+                </span>
+                {product.discount && product.discount > 0 && (
+                  <>
+                    <span className="line-through text-gray-600 text-[14px]">
+                      Rs {product.price}
+                    </span>
+                    <span className="bg-red-100 text-red-600 px-2 py-1 text-xs rounded">
+                      -{product.discount}%
+                    </span>
+                  </>
+                )}
                 <span className="text-[14px] text-gray-600">
-                  Available Stock: 147 items
+                  Available Stock: {product.countInStock} items
                 </span>
               </div>
 
-              <p className="text-gray-700 mb-4">
-                There is a growing demand for authenticity around the globe
-                today. Environmentally friendly products such as handloom
-                textiles are becoming increasingly popular.
-              </p>
+              <p className="text-gray-700 mb-4">{product.description}</p>
 
               {/* Size Selection */}
               <div className="flex items-center gap-3 mb-4">
@@ -94,8 +183,8 @@ const ProductDetails = () => {
                       onClick={() => setProductActionIndex(index)}
                       className={`!border !rounded-md ${
                         ProductActionIndex === index
-                          ? '!bg-black !text-white'
-                          : '!bg-white !text-black'
+                          ? "!bg-black !text-white"
+                          : "!bg-white !text-black"
                       }`}
                     >
                       {size}
@@ -105,237 +194,175 @@ const ProductDetails = () => {
               </div>
 
               {/* Quantity & Add to Cart */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-[100px]">
-                  <QtyBox />
+              <div className="flex items-center gap-4 mb-4 group relative w-full max-w-[320px]">
+                {/* Quantity Selector */}
+                <div className="flex items-center border rounded-md overflow-hidden w-[110px] bg-white">
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-lg bg-gray-200 hover:bg-gray-300 focus:outline-none"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity === 1}
+                  >
+                    -
+                  </button>
+                  <span className="px-4 py-1 text-lg font-medium bg-white min-w-[32px] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-lg bg-gray-200 hover:bg-gray-300 focus:outline-none"
+                    onClick={() =>
+                      setQuantity((q) => Math.min(product.countInStock, q + 1))
+                    }
+                    disabled={quantity === product.countInStock}
+                  >
+                    +
+                  </button>
                 </div>
+                {/* Add to Cart Button - only visible on hover */}
                 <Button
-                  variant="contained"
-                  startIcon={<MdAddShoppingCart />}
-                  className="!bg-orange-600 hover:!bg-orange-700 !text-white px-4 py-2 rounded-md"
+                  onClick={handleAddToCart}
+                  className="absolute right-0 top-0 h-full w-[170px] opacity-100 group-hover:opacity-100 transition-all duration-300 !bg-black !text-white !rounded-md !py-2 flex items-center justify-center gap-2 text-lg font-semibold  disabled:cursor-not-allowed shadow-lg"
+                  disabled={product?.countInStock === 0}
+                  style={{ pointerEvents: "auto" }}
                 >
-                  Add To Cart
+                  <MdAddShoppingCart className="inline-block text-2xl mr-2" />
+                  Add to Cart
                 </Button>
               </div>
 
               {/* Wishlist */}
-              <div className="mb-4">
-                <Button
-                  variant="outlined"
-                  startIcon={<FaHeart />}
-                  className="!text-red-600 hover:!bg-red-100 !rounded-md border !border-[#000]"
-                >
-                  Add to Wishlist
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Section */}
-        <div className="container pt-10">
-          <div className="flex items-center gap-6 border-b pb-2 mb-4">
-            {['description', 'product', 'reviews'].map((tab) => (
-              <button
-                key={tab}
-                className={`text-[18px] font-medium capitalize ${
-                  activeTab === tab
-                    ? 'border-b-2 border-black text-black'
-                    : 'text-gray-500 hover:text-black'
-                }`}
-                onClick={() => setActiveTab(tab)}
+              <Button
+                startIcon={<FaHeart />}
+                className="!bg-white !text-red-600 border border-red-600 px-4 py-2 rounded-md"
               >
-                {tab === 'description'
-                  ? 'Description'
-                  : tab === 'product'
-                  ? 'Product Details'
-                  : 'Reviews'}
-              </button>
-            ))}
-          </div>
+                Add to Wishlist
+              </Button>
 
-          {/* Tab Content */}
-          <div className="shadow-md w-full p-5 rounded-md text-[14px] font-[400] leading-relaxed text-gray-700">
-            {activeTab === 'description' && (
-              <p>
-                Join hands to revive distinctive local industries of Sri Lanka.
-                <br />
-                Nature inspired forms and patterns. Enjoy handloom products
-                especially saree, sarong, lungi, bedsheets, blouses and shirts
-                with a wide variety.
-                <br />
-                Colour – Dark green and orange <br />
-                Colours Available – Combination of different colour <br />
-                Sizes Available – Standard sizes of gents sarong <br />
-                Materials Used – Fabric material with natural dyes <br />
-                Uses – A gents sarong
-              </p>
-            )}
-
-            {activeTab === 'product' && (
-              <div className="space-y-2">
-                <p>
-                  <strong>
-                    Product details of Sandstone Batik Sarong Set Indian Sarong
-                    2M (Random Design)
-                  </strong>
-                </p>
-                <ul className="list-disc pl-5">
-                  <li>Material: Cotton</li>
-                  <li>Size: 2.10 Mts</li>
-                  <li>Blue Mixed Check Design On Sarong</li>
-                  <li>Original Tumbler Sarongs</li>
-                  <li>High Quality</li>
-                  <li>Long Lasting</li>
-                  <li>Eye Catching Colours</li>
-                  <li>
-                    Place Your Order & We Will Send You A Random Blue Sarong
-                  </li>
-                  <li>
-                    Sarong Colour Can Be A Shade Darker Or Lighter Than The
-                    Picture
-                  </li>
-                </ul>
-
-                <p>
-                  <strong>Service Guarantee</strong>
-                </p>
-                <ol className="list-decimal pl-5">
-                  <li>
-                    We guarantee all the items are in 100% good condition and
-                    high quality.
-                  </li>
-                  <li>
-                    If you are not satisfied with the quality of the products
-                    you received, contact us and we will do our best to serve
-                    you until you are satisfied. If still unsatisfied, we can
-                    resend the package or refund your money. Please note this
-                    must be done within 7 days after receiving your parcel.
-                  </li>
-                  <li>
-                    We guarantee you a zero-risk purchase experience here.
-                  </li>
-                </ol>
-
-                <p>
-                  <strong>
-                    Specifications of Sandstone Batik Sarong Set Indian Sarong
-                    2M (Random Design)
-                  </strong>
-                </p>
-                <ul className="list-disc pl-5">
-                  <li>Brand: No Brand</li>
-                  <li>SKU: 178665443_LK-1140005500</li>
-                </ul>
-
-                <p>
-                  <strong>What’s in the box</strong>
-                </p>
-                <ul className="list-disc pl-5">
-                  <li>1 x Sarong</li>
-                </ul>
-              </div>
-            )}
-
-            {activeTab === 'reviews' && (
-              <div className=" w-full py-5 px-8 rounded-md space-y-6">
-                <h2 className="text-[18px] font-semibold mb-4">
-                  Customer Reviews
-                </h2>
-
-                {/* Customer Reviews List */}
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="flex gap-4 items-start border-b pb-4"
-                    >
-                      <div className="w-[50px] h-[50px] rounded-full overflow-hidden">
-                        <img
-                          src="../../../../src/assets/profile.png"
-                          alt="Profile"
-                          className="w-full"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="text-[16px] font-semibold">User {i}</h4>
-                        <p className="text-[13px] text-gray-500 mb-1">
-                          2025-04-10
-                        </p>
-                        <Rating value={4} size="small" readOnly />
-                        <p className="text-[14px] mt-2">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit. Praesent sit amet semper lorem. Aenean nec
-                          ullamcorper justo.
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Review Form */}
-                <div className="pt-6">
-                  <h3 className="text-[18px] font-semibold mb-4">
-                    Leave a Review
-                  </h3>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleReviewSubmit();
-                    }}
-                    className="space-y-4"
+              {/* Tabs for Description/Reviews */}
+              <div className="mt-8">
+                <div className="flex gap-4 mb-4">
+                  <button
+                    className={`px-4 py-2 rounded-md ${
+                      activeTab === "description"
+                        ? "bg-black text-white"
+                        : "bg-gray-200 text-black"
+                    }`}
+                    onClick={() => setActiveTab("description")}
                   >
-                    <TextField
-                      fullWidth
-                      label="Name"
-                      value={review.userName}
-                      onChange={(e) =>
-                        setReview({ ...review, userName: e.target.value })
-                      }
-                    />
-                    <div>
-                      <label className="block text-sm font-medium mb-1 mt-3">
-                        Rating
-                      </label>
-                      <Rating
-                        name="user-rating"
-                        value={review.rating}
-                        onChange={(_, newValue) =>
-                          setReview({ ...review, rating: newValue })
-                        }
-                      />
-                    </div>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={4}
-                      label="Comment"
-                      value={review.comment}
-                      onChange={(e) =>
-                        setReview({ ...review, comment: e.target.value })
-                      }
-                    />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      className="!bg-black hover:!bg-gray-800 text-white !mt-3"
-                    >
-                      Submit Review
-                    </Button>
-                  </form>
+                    Description
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-md ${
+                      activeTab === "reviews"
+                        ? "bg-black text-white"
+                        : "bg-gray-200 text-black"
+                    }`}
+                    onClick={() => setActiveTab("reviews")}
+                  >
+                    Reviews
+                  </button>
                 </div>
+                {activeTab === "description" ? (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Product Description
+                    </h3>
+                    <p>{product.description}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Write a Review
+                    </h3>
+                    {reviewError && (
+                      <div className="text-red-600 mb-2">{reviewError}</div>
+                    )}
+                    {reviewSuccess && (
+                      <div className="text-green-600 mb-2">{reviewSuccess}</div>
+                    )}
+                    {user ? (
+                      <>
+                        <Rating
+                          name="review-rating"
+                          value={review.rating}
+                          onChange={(_, newValue) =>
+                            setReview({ ...review, rating: newValue })
+                          }
+                        />
+                        <TextField
+                          label="Comment"
+                          value={review.comment}
+                          onChange={(e) =>
+                            setReview({ ...review, comment: e.target.value })
+                          }
+                          fullWidth
+                          margin="normal"
+                          multiline
+                          rows={3}
+                        />
+                        <Button
+                          variant="contained"
+                          className="!bg-black text-white mt-2"
+                          onClick={handleReviewSubmit}
+                          disabled={reviewLoading}
+                        >
+                          {reviewLoading ? "Submitting..." : "Submit Review"}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-red-600 font-medium mb-6">
+                        Please log in to write a review.
+                      </div>
+                    )}
+                    {/* Show reviews */}
+                    <div className="mt-8">
+                      <h4 className="text-md font-semibold mb-2">
+                        User Reviews
+                      </h4>
+                      {product.reviews && product.reviews.length > 0 ? (
+                        <div className="space-y-4">
+                          {product.reviews.map((r, idx) => (
+                            <div
+                              key={idx}
+                              className="border rounded-md p-3 bg-gray-50"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold">{r.name}</span>
+                                <span className="text-gray-400 text-xs">
+                                  ({r.email})
+                                </span>
+                                <Rating
+                                  value={Number(r.rating)}
+                                  size="small"
+                                  readOnly
+                                />
+                              </div>
+                              <div className="text-gray-700">{r.comment}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(r.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">No reviews yet.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        <section className="py-5 bg-white pb-0 mt-3">
-          <div className="container ">
-            <div className="leftsec p-5">
-              <h2 className="text-[20px] font-[600]">Related Products</h2>
-              <ProductsSlider items={5} />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+
+      {/* Related Products Slider */}
+      <section className="py-5 bg-white">
+        <div className="container">
+          <h2 className="text-[20px] font-[600] mb-4">Related Products</h2>
+          <ProductsSlider items={4} />
+        </div>
       </section>
     </>
   );
