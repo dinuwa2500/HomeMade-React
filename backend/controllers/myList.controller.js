@@ -40,7 +40,6 @@ export async function addMyList(req, res) {
       mylist: save,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       message: "Something went wrong",
       error: error.message,
@@ -74,7 +73,6 @@ export async function deleteMyList(req, res) {
       message: "Item deleted successfully from myList",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       message: "Something went wrong",
       error: error.message,
@@ -95,7 +93,6 @@ export async function getMyList(req, res) {
       data: myListItems,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       message: "Something went wrong",
       error: error.message,

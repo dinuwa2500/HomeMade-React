@@ -91,7 +91,7 @@ const ForgotPassword = () => {
     try {
       setLoading(true); // Set loading state before API call
 
-      await postData("/api/users/reset-password", formData).then((response) => {
+      await postData("/api/users/reset-password", formData, false).then((response) => {
         console.log(response);
 
         if (response.success) {

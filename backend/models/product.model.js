@@ -54,7 +54,6 @@ const productSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Optional: for advanced categorization (subcategories, etc.)
     catName: { type: String, default: "", trim: true },
     catId: { type: String, default: "", trim: true },
     subCatId: { type: String, default: "", trim: true },

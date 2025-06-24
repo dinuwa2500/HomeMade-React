@@ -46,7 +46,6 @@ export async function addToCart(req, res) {
       .status(200)
       .json({ success: true, message: "Item added to cart", data: save });
   } catch (error) {
-    console.error("Error adding to cart:", error);
     res.status(500).json({
       success: false,
       message: "Failed to add item to cart",
@@ -68,7 +67,6 @@ export async function getCartItems(req, res) {
       data: cartItems,
     });
   } catch (error) {
-    console.error("Error getting cart items:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get cart items",
@@ -113,7 +111,6 @@ export async function updateCartItem(req, res) {
       data: updateCartItem,
     });
   } catch (error) {
-    console.error("Error updating cart item:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update cart item",
@@ -152,7 +149,6 @@ export async function deleteCartItem(req, res) {
       data: deletecartItem,
     });
   } catch (error) {
-    console.error("Error deleting cart item:", error);
     res.status(500).json({
       success: false,
       message: "Failed to delete cart item",

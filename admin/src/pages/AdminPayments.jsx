@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import html2canvas from "html2canvas";
 
 const API_URL = import.meta.env.VITE_BACKEND_URI || "http://localhost:8000";
 const backendUrl = API_URL;
@@ -134,16 +135,79 @@ const AdminPayments = () => {
     }
   };
 
+  const exportOrdersAsPng = async () => {
+    const table = document.getElementById("orders-table-section");
+    if (!table) return;
+    const colorProps = [
+      'color',
+      'backgroundColor',
+      'borderColor',
+      'outlineColor',
+      'boxShadow',
+    ];
+    const nodesWithOverrides = [];
+    function saveAndOverride(element) {
+      const computedStyle = window.getComputedStyle(element);
+      let changed = false;
+      const original = {};
+      for (const prop of colorProps) {
+        let value = computedStyle[prop];
+        if (prop === 'boxShadow' && value && value.includes('oklch')) {
+          original.boxShadow = element.style.boxShadow;
+          element.style.boxShadow = 'none';
+          changed = true;
+        } else if (value && value.includes('oklch')) {
+          original[prop] = element.style[prop];
+          if (prop === 'color' || prop === 'outlineColor' || prop === 'borderColor') {
+            element.style[prop] = '#222';
+          } else if (prop === 'backgroundColor') {
+            element.style[prop] = '#fff';
+          }
+          changed = true;
+        }
+      }
+      if (changed) nodesWithOverrides.push({ element, original });
+      for (const child of element.children) {
+        saveAndOverride(child);
+      }
+    }
+    saveAndOverride(table);
+    const canvas = await html2canvas(table, {
+      useCORS: true,
+      backgroundColor: "#fff",
+      scale: 2,
+    });
+    nodesWithOverrides.forEach(({ element, original }) => {
+      for (const prop in original) {
+        element.style[prop] = original[prop];
+      }
+    });
+    const link = document.createElement("a");
+    link.download = `orders_report_${new Date().toLocaleDateString().replace(/\//g, "-")}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
   return (
     <div className="p-6 bg-white rounded shadow-md">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Admin Orders</h2>
-
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-800">Admin Orders</h2>
+        <button
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition-colors duration-200 text-base"
+          onClick={exportOrdersAsPng}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625A2.625 2.625 0 0016.875 9h-9.75A2.625 2.625 0 004.5 11.625v2.625m15 0v2.625A2.625 2.625 0 0116.875 19.5h-9.75A2.625 2.625 0 014.5 16.875v-2.625m15 0H4.5" />
+          </svg>
+          Generate Report
+        </button>
+      </div>
       {loading ? (
         <div className="text-center text-lg text-gray-600">Loading...</div>
       ) : orders.length === 0 ? (
         <div className="text-center text-gray-500">No orders found.</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div id="orders-table-section" className="overflow-x-auto">
           <table className="min-w-full border rounded shadow text-sm">
             <thead className="bg-gray-100">
               <tr>

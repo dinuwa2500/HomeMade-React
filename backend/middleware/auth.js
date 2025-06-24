@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 
 const auth = async (req, res, next) => {
   try {
-    // Check for token in cookies or Authorization header
     let authHeader = req.cookies.accesstoken || req.headers.authorization;
 
     if (!authHeader) {
@@ -33,10 +32,8 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Optional: check if decoded payload contains ID or email
     if (!decoded?.id) {
       return res.status(401).json({
         message: "Invalid token payload",
@@ -45,7 +42,6 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Attach user info to request
     req.user = decoded;
 
     next();

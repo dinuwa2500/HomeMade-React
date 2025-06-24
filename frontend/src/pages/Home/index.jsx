@@ -14,7 +14,6 @@ const Home = () => {
   const [products, setProducts] = React.useState([]);
 
   React.useEffect(() => {
-    // Fetch products from backend
     fetch(`${import.meta.env.VITE_BACKEND_URI || 'http://localhost:8000'}/api/products`)
       .then((res) => res.json())
       .then((data) => {

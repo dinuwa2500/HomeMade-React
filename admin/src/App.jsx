@@ -6,6 +6,7 @@ import {
   Routes,
   Route,
   RouterProvider,
+  Navigate,
 } from "react-router-dom";
 import Dashboard from "./pages/Dashboard/index.jsx";
 import Header from "./components/Header";
@@ -22,12 +23,17 @@ import AdminOrderDetails from "./pages/AdminOrderDetails";
 import AdminDeliveries from "./pages/Deliveries";
 import AdminDeliveryDetails from "./pages/Deliveries/DeliveryDetails";
 import AdminUsers from "./pages/AdminUsers";
-import AdminReviews from "./pages/AdminReviews"; // added import statement
-import AdminDrivers from "./pages/AdminDrivers"; // added import statement
+import AdminReviews from "./pages/AdminReviews"; 
+import AdminDrivers from "./pages/AdminDrivers"; 
+import AdminDashboard from "./pages/SupportTicket/AdminDashboard.jsx";
 import { Toaster } from "react-hot-toast";
 
 function App() {
   const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <Navigate to="/dashboard" replace />,
+    },
     {
       path: "/login",
       element: <AdminSignIn />,
@@ -228,6 +234,24 @@ function App() {
               </div>
               <div className="contentRight w-[82%] py-4 px-5">
                 <AdminDrivers />
+              </div>
+            </div>
+          </section>
+        </RequireAdmin>
+      ),
+    },
+    {
+      path: "/support-tickets",
+      element: (
+        <RequireAdmin>
+          <section className="main">
+            <Header />
+            <div className="contentMain flex">
+              <div className="sideBarWrapper w-[18%] ">
+                <Sidebar />
+              </div>
+              <div className="contentRight w-[78%] py-4 px-5">
+                <AdminDashboard />
               </div>
             </div>
           </section>

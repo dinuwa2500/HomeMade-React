@@ -8,7 +8,6 @@ import { Button } from '@mui/material';
 import { IoGridSharp } from 'react-icons/io5';
 import { LuMenu } from 'react-icons/lu'
 
-
 const ProductListing = () => {
   return (
     <section className="py-5">
@@ -41,8 +40,7 @@ const ProductListing = () => {
                   <LuMenu className="text-[rgba(0,0,0,0.7)]" />
                 </Button>
 
-<span className='text-[14px] font-[500] pl-3'>There are 27 products</span>
-
+                <span className='text-[14px] font-[500] pl-3'>There are 27 products</span>
 
               </div>
             </div>

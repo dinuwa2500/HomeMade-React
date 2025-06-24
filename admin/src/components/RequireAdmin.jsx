@@ -31,7 +31,6 @@ const RequireAdmin = ({ children }) => {
       }
     };
     checkAdmin();
-    // eslint-disable-next-line
   }, []);
 
   if (loading) return null;

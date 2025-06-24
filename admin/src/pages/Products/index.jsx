@@ -22,8 +22,20 @@ const ProductsPage = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingProduct, setEditingProduct] = useState({});
   const [editingImagePreviews, setEditingImagePreviews] = useState([]);
+  const [search, setSearch] = useState("");
 
-  // Fetch all categories
+  const filteredProducts = products.filter((prod) => {
+    const name = prod.name?.toLowerCase() || "";
+    const brand = prod.brand?.toLowerCase() || "";
+    const categoryName = categories.find((cat) => cat._id === prod.category)?.name?.toLowerCase() || "";
+    const searchTerm = search.toLowerCase();
+    return (
+      name.includes(searchTerm) ||
+      brand.includes(searchTerm) ||
+      categoryName.includes(searchTerm)
+    );
+  });
+
   const fetchCategories = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/categories`);
@@ -34,7 +46,6 @@ const ProductsPage = () => {
     } catch {}
   };
 
-  // Fetch all products
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -59,7 +70,6 @@ const ProductsPage = () => {
     fetchProducts();
   }, []);
 
-  // Handle image selection
   const handleImageChange = (e, isEdit = false) => {
     const files = Array.from(e.target.files);
     const previews = files.map((file) => URL.createObjectURL(file));
@@ -72,7 +82,6 @@ const ProductsPage = () => {
     }
   };
 
-  // Add product
   const handleAdd = async (e) => {
     e.preventDefault();
     if (
@@ -126,7 +135,6 @@ const ProductsPage = () => {
     }
   };
 
-  // Delete product
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
     try {
@@ -147,14 +155,12 @@ const ProductsPage = () => {
     }
   };
 
-  // Start editing
   const startEdit = (prod) => {
     setEditingId(prod._id);
     setEditingProduct({ ...prod, images: [] });
     setEditingImagePreviews(prod.images || []);
   };
 
-  // Update product
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (
@@ -346,7 +352,7 @@ const ProductsPage = () => {
                   key={i}
                   src={typeof src === "string" ? src : URL.createObjectURL(src)}
                   alt="Preview"
-                  className="w-16 h-16 object-cover rounded border"
+                  className="w-16 h-16 object-cover rounded border shadow-sm"
                 />
               )
             )}
@@ -379,44 +385,70 @@ const ProductsPage = () => {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-t">
+        <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 bg-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Product List</h2>
+            <input
+              type="text"
+              className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Search products by name, brand, or category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ minWidth: 220 }}
+            />
+          </div>
+          <table className="min-w-full text-sm">
             <thead>
-              <tr className="text-gray-600">
-                <th className="py-2">Image</th>
-                <th className="py-2">Name</th>
-                <th className="py-2">Brand</th>
-                <th className="py-2">Category</th>
-                <th className="py-2">Price</th>
-                <th className="py-2">Stock</th>
-                <th className="py-2">Discount</th>
-                <th className="py-2">Actions</th>
+              <tr className="bg-gradient-to-r from-blue-50 to-purple-100 text-gray-700">
+                <th className="py-3 px-4 text-left font-semibold">Image</th>
+                <th className="py-3 px-4 text-left font-semibold">Name</th>
+                <th className="py-3 px-4 text-left font-semibold">Brand</th>
+                <th className="py-3 px-4 text-left font-semibold">Category</th>
+                <th className="py-3 px-4 text-left font-semibold">Price</th>
+                <th className="py-3 px-4 text-left font-semibold">Stock</th>
+                <th className="py-3 px-4 text-left font-semibold">Discount</th>
+                <th className="py-3 px-4 text-left font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((prod) => (
-                <tr key={prod._id} className="border-b hover:bg-gray-50">
-                  <td className="py-2">
+              {filteredProducts.map((prod) => (
+                <tr key={prod._id} className="border-b hover:bg-blue-50 transition group">
+                  <td className="py-2 px-4">
                     {prod.images && prod.images.length > 0 && (
                       <img
                         src={prod.images[0]}
                         alt="Product"
-                        className="w-12 h-12 object-cover rounded border"
+                        className="w-14 h-14 object-cover rounded-lg border shadow-sm group-hover:scale-105 transition-transform"
                       />
                     )}
                   </td>
-                  <td className="py-2">{prod.name}</td>
-                  <td className="py-2">{prod.brand}</td>
-                  <td className="py-2">
-                    {categories.find((cat) => cat._id === prod.category)
-                      ?.name || prod.category}
+                  <td className="py-2 px-4 font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                    {prod.name}
                   </td>
-                  <td className="py-2">Rs.{prod.price}</td>
-                  <td className="py-2">{prod.countInStock}</td>
-                  <td className="py-2">
-                    {prod.discount ? `${prod.discount}%` : "-"}
+                  <td className="py-2 px-4">
+                    <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                      {prod.brand}
+                    </span>
                   </td>
-                  <td className="py-2 flex gap-2">
+                  <td className="py-2 px-4">
+                    <span className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">
+                      {categories.find((cat) => cat._id === prod.category)?.name || prod.category}
+                    </span>
+                  </td>
+                  <td className="py-2 px-4 text-red-600 font-bold">
+                    Rs.{prod.price}
+                  </td>
+                  <td className="py-2 px-4">
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${prod.countInStock <= 5 ? 'bg-yellow-100 text-yellow-700 animate-pulse' : 'bg-green-100 text-green-700'}`}>{prod.countInStock}</span>
+                  </td>
+                  <td className="py-2 px-4">
+                    {prod.discount ? (
+                      <span className="inline-block bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">{prod.discount}%</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 flex gap-2">
                     <button
                       className="px-3 py-1 rounded bg-yellow-400 hover:bg-yellow-500 text-white text-xs font-bold"
                       onClick={() => startEdit(prod)}

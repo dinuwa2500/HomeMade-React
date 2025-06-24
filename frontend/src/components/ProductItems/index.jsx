@@ -10,7 +10,6 @@ import { MdZoomOutMap } from 'react-icons/md';
 import { Button } from '@mui/material';
 
 const ProductItems = ({ product }) => {
-  // fallback demo data if no product is provided
   const demo = {
     images: [
       'https://ekade.lk/wp-content/uploads/2023/06/8a20492ae76871335281b497742ea10b-420x420.jpg',
@@ -26,11 +25,13 @@ const ProductItems = ({ product }) => {
   return (
     <div className="ProductItems shadow-lg rounded-md overflow-hidden border border-[rgba(0,0,0,0.1)]">
       <div className="img-wrapper group relative rounded-md w-full h-[250px] overflow-hidden">
-        <img
-          src={p.images && p.images.length > 0 ? p.images[0] : demo.images[0]}
-          alt={p.name}
-          className="w-full h-full object-cover"
-        />
+        <Link to={`/product/${p._id}`} className="block group">
+          <img
+            src={p.images?.[0] || "/placeholder.jpg"}
+            alt={p.name}
+            className="w-full h-56 object-cover rounded-t-lg group-hover:scale-105 transition-transform duration-300"
+          />
+        </Link>
         <div className="actions absolute top-[-200px] right-[-12px] flex items-center gap-2 flex-col w-[80px] z-50 transition-all duration-300 group-hover:top-[15px]">
           <Button
             className="!w-[35px] !h-[35px] !min-w-[35px] !rounded-full"

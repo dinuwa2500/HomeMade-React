@@ -13,7 +13,7 @@ import {
   MdArrowDropDown,
   MdArrowDropUp,
 } from "react-icons/md";
-import Collapse from "react-collapse"; // Import Collapse
+import Collapse from "react-collapse";
 
 const iconMap = {
   Dashboard: <MdDashboard />,
@@ -25,16 +25,16 @@ const iconMap = {
   Deliveries: <MdLocalShipping />,
   Logout: <MdLogout />,
   Reviews: <MdOutlineReviews />,
-  Payments: <MdDashboard />, // Add Payments icon
+  Payments: <MdDashboard />,
   Drivers: <MdPeople />,
+  "Support Tickets": <MdDashboard />,
 };
 
 const Sidebar = () => {
-  const [activeItem, setActiveItem] = useState(null); // Manage the active item
+  const [activeItem, setActiveItem] = useState(null);
 
   const handleToggle = (itemName, e) => {
-    e.preventDefault(); // Prevent navigation on menu click
-    // Toggle between showing and hiding the section
+    e.preventDefault();
     setActiveItem(activeItem === itemName ? null : itemName);
   };
 
@@ -61,13 +61,11 @@ const Sidebar = () => {
           link: "/category",
           options: ["Add Category", "View Categories"],
         },
-        // Orders: Only view all orders
         {
           name: "Orders",
           link: "/orders",
           options: [{ name: "View Orders", link: "/orders" }],
         },
-        // Payments: Only approve/reject payments
         {
           name: "Payments",
           link: "/payments",
@@ -86,12 +84,13 @@ const Sidebar = () => {
           link: "/admin/drivers",
           options: [{ name: "View Drivers", link: "/admin/drivers" }],
         },
-        { name: "Logout" },
+        { name: "Support Tickets", link: "/support-tickets" },
         {
           name: "Reviews",
           link: "/reviews",
           options: [{ name: "View Reviews", link: "/reviews" }],
         },
+        { name: "Logout" },
       ],
     },
   ];
@@ -125,7 +124,7 @@ const Sidebar = () => {
                       </Link>
                     ) : (
                       <Link
-                        to={item.link || "/"} // Use the link property if available
+                        to={item.link || "/"}
                         onClick={
                           item.link
                             ? undefined
@@ -137,7 +136,6 @@ const Sidebar = () => {
                           {iconMap[item.name] || <MdDashboard />}
                         </span>
                         <span className="ml-3">{item.name}</span>
-                        {/* Add the up/down toggle icon */}
                         {item.options && (
                           <span className="ml-auto">
                             {activeItem === item.name ? (
@@ -151,7 +149,6 @@ const Sidebar = () => {
                     )}
                   </li>
 
-                  {/* Use Collapse to show/hide submenu */}
                   <Collapse isOpened={activeItem === item.name}>
                     {item.options && (
                       <ul className="ml-6 mt-2">

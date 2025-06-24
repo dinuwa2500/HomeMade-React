@@ -3,11 +3,13 @@ import { Button, Typography, TextField, MenuItem } from "@mui/material";
 import MyContext from "../../context";
 import { putData } from "../../pages/api";
 import toast from "react-hot-toast";
+import { useLocation } from "react-router-dom";
 
 const API_BASE = "http://localhost:8000";
 
 const MyProfile = () => {
   const context = useContext(MyContext);
+  const location = useLocation();
   const token = localStorage.getItem("accesstoken");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,18 +38,160 @@ const MyProfile = () => {
       setRole(context.user.role || "");
       setTwoFaStatus(context.user.twoFaEnabled);
     }
-  }, [context.user]);
+  }, [context.user, location.pathname]);
 
   const validateForm = () => {
     const newErrors = {};
     if (!fullName.trim()) newErrors.fullName = "Name is required";
+    if (fullName && (fullName.length < 2 || fullName.length > 50)) 
+      newErrors.fullName = "Name must be between 2 and 50 characters";
+    if (fullName && !/^[a-zA-Z\s'-]+$/.test(fullName))
+      newErrors.fullName = "Name can only contain letters, spaces, hyphens and apostrophes";
+
     if (!email.trim()) newErrors.email = "Email is required";
-    if (email && !/\S+@\S+\.\S+/.test(email))
-      newErrors.email = "Invalid email format";
+    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email))
+      newErrors.email = "Please enter a valid email address";
+
     if (phone && !/^\d{10}$/.test(phone))
-      newErrors.phone = "Phone should be 10 digits";
+      newErrors.phone = "Phone number must be exactly 10 digits";
+    
+    if (address && address.length < 5)
+      newErrors.address = "Address must be at least 5 characters";
+    if (address && address.length > 200)
+      newErrors.address = "Address cannot exceed 200 characters";
+    if (address && !/[a-zA-Z]/.test(address))
+      newErrors.address = "Address must contain at least one letter";
+    
+    if (city && city.length > 50)
+      newErrors.city = "City name cannot exceed 50 characters";
+    if (city && !/[a-zA-Z]/.test(city))
+      newErrors.city = "City name must contain at least one letter";
+    
+    if (dob) {
+      const dobDate = new Date(dob);
+      const today = new Date();
+      const minDate = new Date();
+      minDate.setFullYear(today.getFullYear() - 120); // Max age 120 years
+      const maxDate = new Date();
+      maxDate.setFullYear(today.getFullYear() - 13); // Min age 13 years
+      
+      if (isNaN(dobDate.getTime())) {
+        newErrors.dob = "Please enter a valid date";
+      } else if (dobDate > today) {
+        newErrors.dob = "Date of birth cannot be in the future";
+      } else if (dobDate < minDate) {
+        newErrors.dob = "Age cannot exceed 120 years";
+      } else if (dobDate > maxDate) {
+        newErrors.dob = "You must be at least 13 years old";
+      }
+    }
+    
+    if (dob && !address.trim())
+      newErrors.address = "Address is required when date of birth is provided";
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Update the corresponding state based on input name
+    switch(name) {
+      case "fullName": 
+        setFullName(value); 
+        // Validate name on change
+        if (!value.trim()) {
+          setErrors(prev => ({ ...prev, fullName: "Name is required" }));
+        } else if (value.length < 2 || value.length > 50) {
+          setErrors(prev => ({ ...prev, fullName: "Name must be between 2 and 50 characters" }));
+        } else if (!/^[a-zA-Z\s'-]+$/.test(value)) {
+          setErrors(prev => ({ ...prev, fullName: "Name can only contain letters, spaces, hyphens and apostrophes" }));
+        } else {
+          setErrors(prev => ({ ...prev, fullName: "" }));
+        }
+        break;
+      
+      case "phone": 
+        setPhone(value); 
+        // Validate phone on change
+        if (value && !/^\d{10}$/.test(value)) {
+          setErrors(prev => ({ ...prev, phone: "Phone number must be exactly 10 digits" }));
+        } else {
+          setErrors(prev => ({ ...prev, phone: "" }));
+        }
+        break;
+      
+      case "address": 
+        setAddress(value); 
+        // Validate address on change
+        if (!value.trim() && dob) {
+          setErrors(prev => ({ ...prev, address: "Address is required when date of birth is provided" }));
+        } else if (value && value.length < 5) {
+          setErrors(prev => ({ ...prev, address: "Address must be at least 5 characters" }));
+        } else if (value && value.length > 200) {
+          setErrors(prev => ({ ...prev, address: "Address cannot exceed 200 characters" }));
+        } else if (value && !/[a-zA-Z]/.test(value)) {
+          setErrors(prev => ({ ...prev, address: "Address must contain at least one letter" }));
+        } else {
+          setErrors(prev => ({ ...prev, address: "" }));
+        }
+        break;
+      
+      case "city": 
+        setCity(value); 
+        // Validate city on change
+        if (value && value.length > 50) {
+          setErrors(prev => ({ ...prev, city: "City name cannot exceed 50 characters" }));
+        } else if (value && !/[a-zA-Z]/.test(value)) {
+          setErrors(prev => ({ ...prev, city: "City name must contain at least one letter" }));
+        } else {
+          setErrors(prev => ({ ...prev, city: "" }));
+        }
+        break;
+      
+      case "dob": 
+        setDob(value); 
+        // Validate date of birth on change
+        if (value) {
+          const dobDate = new Date(value);
+          const today = new Date();
+          const minDate = new Date();
+          minDate.setFullYear(today.getFullYear() - 120); // Max age 120 years
+          const maxDate = new Date();
+          maxDate.setFullYear(today.getFullYear() - 13); // Min age 13 years
+          
+          if (isNaN(dobDate.getTime())) {
+            setErrors(prev => ({ ...prev, dob: "Please enter a valid date" }));
+          } else if (dobDate > today) {
+            setErrors(prev => ({ ...prev, dob: "Date of birth cannot be in the future" }));
+          } else if (dobDate < minDate) {
+            setErrors(prev => ({ ...prev, dob: "Age cannot exceed 120 years" }));
+          } else if (dobDate > maxDate) {
+            setErrors(prev => ({ ...prev, dob: "You must be at least 13 years old" }));
+          } else {
+            setErrors(prev => ({ ...prev, dob: "" }));
+          }
+          
+          // Check if address is required when DOB is provided
+          if (!address.trim()) {
+            setErrors(prev => ({ ...prev, address: "Address is required when date of birth is provided" }));
+          }
+        } else {
+          setErrors(prev => ({ ...prev, dob: "" }));
+        }
+        break;
+      
+      case "gender": 
+        setGender(value);
+        break;
+        
+      case "role":
+        setRole(value);
+        break;
+        
+      default: break;
+    }
   };
 
   const handleUpdate = async (e) => {
@@ -197,90 +341,81 @@ const MyProfile = () => {
       <h2 className="pb-3 text-xl font-semibold">My Profile</h2>
       <hr className="mb-4" />
 
-      <form onSubmit={handleUpdate} className="flex flex-wrap gap-5">
-        <div className="w-[48%]">
+      <form onSubmit={handleUpdate}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextField
-            fullWidth
             label="Full Name"
+            name="fullName"
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            onChange={handleInputChange}
+            fullWidth
+            margin="normal"
             error={!!errors.fullName}
             helperText={errors.fullName}
-            variant="outlined"
-            margin="normal"
+            required
           />
-        </div>
-
-        <div className="w-[48%]">
           <TextField
-            fullWidth
             label="Email"
+            name="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            margin="normal"
             error={!!errors.email}
             helperText={errors.email}
-            variant="outlined"
-            margin="normal"
+            required
             disabled
           />
-        </div>
-
-        <div className="w-[48%]">
           <TextField
-            fullWidth
             label="Phone"
+            name="phone"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handleInputChange}
+            fullWidth
+            margin="normal"
             error={!!errors.phone}
             helperText={errors.phone}
-            variant="outlined"
-            margin="normal"
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
           />
-        </div>
-
-        <div className="w-[48%]">
           <TextField
-            fullWidth
             label="Address"
+            name="address"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            variant="outlined"
-            margin="normal"
-          />
-        </div>
-
-        <div className="w-[48%]">
-          <TextField
+            onChange={handleInputChange}
             fullWidth
+            margin="normal"
+            error={!!errors.address}
+            helperText={errors.address}
+            multiline
+            rows={2}
+          />
+          <TextField
             label="City"
+            name="city"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
-            variant="outlined"
-            margin="normal"
-          />
-        </div>
-
-        <div className="w-[48%]">
-          <TextField
+            onChange={handleInputChange}
             fullWidth
+            margin="normal"
+            error={!!errors.city}
+            helperText={errors.city}
+          />
+          <TextField
             label="Date of Birth"
+            name="dob"
             type="date"
             value={dob}
-            onChange={(e) => setDob(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            variant="outlined"
-            margin="normal"
-          />
-        </div>
-
-        <div className="w-[48%]">
-          <TextField
+            onChange={handleInputChange}
             fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            error={!!errors.dob}
+            helperText={errors.dob}
+          />
+          <TextField
             label="Gender"
             select
             value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            variant="outlined"
+            onChange={handleInputChange}
+            fullWidth
             margin="normal"
           >
             <MenuItem value="">Select Gender</MenuItem>
@@ -288,16 +423,13 @@ const MyProfile = () => {
             <MenuItem value="Female">Female</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </TextField>
-        </div>
-
-        <div className="w-[48%]">
           <TextField
-            fullWidth
             label="Role"
+            name="role"
             select
             value={role}
-            onChange={(e) => setRole(e.target.value)}
-            variant="outlined"
+            onChange={handleInputChange}
+            fullWidth
             margin="normal"
           >
             <MenuItem value="user">User</MenuItem>

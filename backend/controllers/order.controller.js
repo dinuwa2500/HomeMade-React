@@ -2,7 +2,6 @@ import Order from "../models/order.model.js";
 import mongoose from "mongoose";
 import CartProduct from "../models/cartProduct.model.js";
 
-// Place a new order
 export const placeOrder = async (req, res) => {
   try {
     const { userId, cartItems, delivery_address, subTotalAmt, totalAmt } =
@@ -18,7 +17,6 @@ export const placeOrder = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Missing required fields" });
     }
-    // Create a single order document with all items
     const orderId = "ORD" + Date.now();
     const order = new Order({
       userId: new mongoose.Types.ObjectId(userId),
@@ -40,7 +38,6 @@ export const placeOrder = async (req, res) => {
       paymentSlipUploaded: false,
     });
     await order.save();
-    // Clear user's cart in backend after order placed
     await CartProduct.deleteMany({ userId: userId });
     return res.json({ success: true, message: "Order placed", orderId });
   } catch (error) {
@@ -49,7 +46,6 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-// Admin: update order status
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -84,7 +80,6 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Admin: get all orders
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -97,7 +92,6 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
-// Get orders for the currently logged-in user
 export const getMyOrders = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -109,7 +103,6 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-// Upload payment slip for an order
 export const uploadPaymentSlip = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -140,7 +133,6 @@ export const uploadPaymentSlip = async (req, res) => {
   }
 };
 
-// Admin approves payment slip
 export const approvePaymentSlip = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -164,7 +156,6 @@ export const approvePaymentSlip = async (req, res) => {
   }
 };
 
-// Admin rejects payment slip
 export const rejectPaymentSlip = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -190,7 +181,6 @@ export const rejectPaymentSlip = async (req, res) => {
   }
 };
 
-// Assign delivery to order
 export const assignDeliveryToOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -202,7 +192,6 @@ export const assignDeliveryToOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    // Optionally: Check if delivery user exists and is a delivery role
     const UserModel = (await import("../models/user.model.js")).default;
     const deliveryUser = await UserModel.findOne({
       _id: deliveryUserId,

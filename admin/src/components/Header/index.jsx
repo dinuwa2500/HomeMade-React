@@ -7,7 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import { FaUser, FaCog, FaSignOutAlt } from "react-icons/fa"; // Importing icons
+import { FaUser, FaCog, FaSignOutAlt } from "react-icons/fa"; 
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -39,7 +39,6 @@ const Header = ({ toggleSidebar }) => {
         const res = await axios.get(`${API_URL}/api/users/details`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        // Try to extract firstName and email from response
         const data = res.data.user || res.data || {};
         setUser({
           firstName: data.firstName || data.name || "",
@@ -89,7 +88,6 @@ const Header = ({ toggleSidebar }) => {
 
   return (
     <header className="w-full h-[50px] pl-72 pr-7 bg-[#e9e7e7] flex items-center justify-between">
-      {/* Left: Menu Icon */}
       <div className="part1">
         <IconButton
           className="!h-[40px] !w-[40px] !min-w-[40px] !rounded-full bg-primary text-white"
@@ -99,9 +97,7 @@ const Header = ({ toggleSidebar }) => {
         </IconButton>
       </div>
 
-      {/* Right: Notifications & Profile */}
       <div className="part2 w-[40%] flex items-center justify-end gap-3">
-        {/* Bell Notification */}
         <div className="relative">
           <IconButton aria-label="notifications" onClick={() => setShowLowStockDropdown(v => !v)}>
             <StyledBadge badgeContent={lowStockCount} color="error">
@@ -124,7 +120,6 @@ const Header = ({ toggleSidebar }) => {
           )}
         </div>
 
-        {/* Avatar with Click Menu */}
         <div
           onClick={handleAvatarClick}
           className="rounded-full w-[40px] h-[40px] overflow-hidden cursor-pointer"
@@ -136,7 +131,6 @@ const Header = ({ toggleSidebar }) => {
           />
         </div>
 
-        {/* Profile Dropdown Menu */}
         <Menu
           anchorEl={anchorEl}
           open={open}

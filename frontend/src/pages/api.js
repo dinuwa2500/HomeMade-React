@@ -1,17 +1,23 @@
 import axios from "axios";
 
-// Correct usage of environment variable
 const apiURl = import.meta.env.VITE_BACKEND_URI;
 
-export const postData = async (url, formData) => {
+export const postData = async (url, formData, requireAuth = true) => {
+  let headers = { "Content-Type": "application/json" };
+  if (requireAuth) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No access token found. Please log in again.");
+    }
+    headers["Authorization"] = `Bearer ${token}`;
+  }
   try {
     const response = await fetch(apiURl + url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(formData),
+      // Uncomment below if your backend requires credentials (cookies)
+      // credentials: 'include',
     });
 
     // If response has no content (204 or 404), don't parse as JSON
@@ -35,9 +41,12 @@ export const postData = async (url, formData) => {
 };
 
 export const fetchDataFromApi = async (url) => {
+  // Retrieve token from localStorage
+  const token = localStorage.getItem("accesstoken");
+  if (!token) {
+    throw new Error("No access token found. Please log in again.");
+  }
   try {
-    const token = localStorage.getItem("accesstoken");
-
     const { data } = await axios.get(apiURl + url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -55,22 +64,18 @@ export const fetchDataFromApi = async (url) => {
 
 export const putData = async (url, formData, config = {}) => {
   try {
-    // Validate input
     if (!(formData instanceof FormData)) {
       throw new Error("Invalid form data format");
     }
 
-    // Configure request
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    // Merge headers properly, ensuring config headers don't override Authorization
     const headers = {
       Authorization: `Bearer ${localStorage.getItem("accesstoken")}`,
       ...(config.headers || {}),
     };
 
-    // Don't manually set Content-Type for FormData, let the browser set it with the boundary
     delete headers["Content-Type"];
 
     const response = await fetch(apiURl + url, {
@@ -78,21 +83,19 @@ export const putData = async (url, formData, config = {}) => {
       headers,
       body: formData,
       signal: controller.signal,
-      credentials: "include", // Include cookies if any
+      credentials: "include",
       ...config,
-      headers, // Override any headers in config spread to ensure our headers take precedence
+      headers,
     });
 
     clearTimeout(timeoutId);
 
-    // Handle non-JSON responses
     const contentType = response.headers.get("content-type");
     const responseData = contentType?.includes("application/json")
       ? await response.json()
       : await response.text();
 
     if (!response.ok) {
-      // Log the full error details
       console.error("Server error:", {
         status: response.status,
         statusText: response.statusText,
@@ -116,7 +119,6 @@ export const putData = async (url, formData, config = {}) => {
       stack: error.stack,
     });
 
-    // Handle specific errors
     const errorMessage =
       error.name === "AbortError"
         ? "Request timed out"

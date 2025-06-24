@@ -1,6 +1,7 @@
-import { Button } from '@mui/material';
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Card, CardMedia, CardContent, Typography, Grid, Collapse, Button } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
+import { fetchDataFromApi } from '../../pages/api';
 
 const categories = [
   {
@@ -36,19 +37,85 @@ const categories = [
 ];
 
 const CategoryCollapse = () => {
+  const { categoryName } = useParams();
+  const [selectedCategory, setSelectedCategory] = useState(categoryName ? decodeURIComponent(categoryName.replace(/-/g, ' ')) : '');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Sync selectedCategory with URL param
+    if (categoryName) {
+      setSelectedCategory(decodeURIComponent(categoryName.replace(/-/g, ' ')));
+    }
+  }, [categoryName]);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      setLoading(true);
+      // Fetch real products by category from backend
+      fetchDataFromApi(`/api/products?category=${encodeURIComponent(selectedCategory)}`)
+        .then(data => {
+          if (data && (data.products || Array.isArray(data))) {
+            setItems(data.products || data);
+          } else {
+            setItems([]);
+          }
+        })
+        .catch(() => setItems([]))
+        .finally(() => setLoading(false));
+    } else {
+      setItems([]);
+    }
+  }, [selectedCategory]);
+
   return (
-    <div className="scroll">
-      <ul className="w-full">
-        {categories.map((category, index) => (
-          <li className="p-3" key={index}>
-            <Link to={category.link} className="w-full block">
-              <Button className="w-full !text-left !justify-start !px-3 !gap-2 !text-[13px] !text-black">
-                {category.name}
-              </Button>
-            </Link>
-          </li>
+    <div>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {categories.map(cat => (
+          <Grid item xs={6} sm={4} md={3} key={cat.name}>
+            <Card
+              onClick={() => {
+                setSelectedCategory(cat.name);
+              }}
+              sx={{ cursor: 'pointer', boxShadow: selectedCategory === cat.name ? 6 : 1, border: selectedCategory === cat.name ? '2px solid #1976d2' : 'none', transition: 'box-shadow 0.2s, border 0.2s' }}
+            >
+              <CardMedia component="img" height="120" image={cat.img} alt={cat.name} />
+              <CardContent>
+                <Typography variant="subtitle1" align="center">{cat.name}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </ul>
+      </Grid>
+
+      <Collapse in={!!selectedCategory} timeout="auto" unmountOnExit>
+        <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
+          {selectedCategory} Items
+        </Typography>
+        {loading ? (
+          <Typography sx={{ ml: 2 }}>Loading...</Typography>
+        ) : (
+          <Grid container spacing={2}>
+            {items.length > 0 ? (
+              items.map(item => (
+                <Grid item xs={12} sm={6} md={4} key={item.id}>
+                  <Card>
+                    <CardMedia component="img" height="140" image={item.img} alt={item.name} />
+                    <CardContent>
+                      <Typography variant="subtitle1">{item.name}</Typography>
+                      <Typography color="text.secondary">Rs. {item.price}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))
+            ) : (
+              <Typography sx={{ ml: 2 }}>No items in this category.</Typography>
+            )}
+          </Grid>
+        )}
+      
+      </Collapse>
     </div>
   );
 };

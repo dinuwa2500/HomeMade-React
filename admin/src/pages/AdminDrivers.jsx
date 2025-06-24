@@ -11,7 +11,7 @@ export default function AdminDrivers() {
   const [orderId, setOrderId] = useState("");
   const [assigning, setAssigning] = useState(false);
 
-  // Orders for dropdown
+
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -34,7 +34,6 @@ export default function AdminDrivers() {
     fetchDrivers();
   }, []);
 
-  // Fetch available orders on mount
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -42,10 +41,9 @@ export default function AdminDrivers() {
         const res = await axios.get(`${API_URL}/api/order/all`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        // Only include orders that are not delivered/cancelled
         setOrders((res.data.orders || []).filter(o => !["delivered", "cancelled"].includes(o.status)));
       } catch (err) {
-        // Optionally show error toast
+       
       }
     };
     fetchOrders();

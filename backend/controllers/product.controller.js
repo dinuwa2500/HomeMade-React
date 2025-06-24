@@ -1,18 +1,15 @@
 import fs from 'fs';
 import Product from '../models/product.model.js';
 import { uploadImage } from '../utilities/uploadimage.js';
-import UserModel from '../models/user.model.js'; // Import UserModel
+import UserModel from '../models/user.model.js'; 
+import mongoose from 'mongoose';
 
-// Create product
 export async function CreateProduct(request, response) {
   try {
-    console.log('DEBUG: CreateProduct req.body:', request.body);
-    console.log('DEBUG: CreateProduct req.files:', request.files);
+   
     let imageUrls = [];
 
-    // Handle image uploads if files are present in the request
     if (request.files && request.files.length > 0) {
-      // Upload each image to Imgur and collect URLs
       const uploadPromises = request.files.map(async (file) => {
         try {
           let fileBuffer;
@@ -29,33 +26,28 @@ export async function CreateProduct(request, response) {
           }
           return null;
         } catch (err) {
-          // Log and propagate the error for better error handling
           console.error('Image upload failed:', err);
           throw err;
         }
       });
 
       try {
-        // Wait for all image uploads to complete
         const uploadedImages = await Promise.all(uploadPromises);
         imageUrls = uploadedImages.filter((url) => url !== null);
       } catch (err) {
-        // If any image upload fails, return a specific error
         return response.status(400).json({
           success: false,
           message: `Image upload failed: ${err?.data?.error || err.message || 'Unknown error'}`,
         });
       }
     } else if (request.body.images && Array.isArray(request.body.images)) {
-      // If image URLs are directly provided in the request body
       imageUrls = request.body.images;
     }
 
-    // Create new product with data from request body
     const product = new Product({
       name: request.body.name,
       description: request.body.description,
-      images: imageUrls, // Use the uploaded image URLs
+      images: imageUrls, 
       brand: request.body.brand,
       price: request.body.price,
       catName: request.body.catName,
@@ -77,7 +69,6 @@ export async function CreateProduct(request, response) {
       location: request.body.location,
     });
 
-    // Validate required fields
     if (
       !product.name ||
       !product.description ||
@@ -91,10 +82,8 @@ export async function CreateProduct(request, response) {
       });
     }
 
-    // Save the product to the database
     const savedProduct = await product.save();
 
-    // Return success response with the saved product
     response.status(201).json({
       success: true,
       message: 'Product created successfully',
@@ -109,10 +98,8 @@ export async function CreateProduct(request, response) {
   }
 }
 
-// Get all products
 export async function GetAllProducts(request, response) {
   try {
-    // Extract query parameters for filtering and pagination
     const {
       category,
       featured,
@@ -123,27 +110,29 @@ export async function GetAllProducts(request, response) {
       limit = 10,
     } = request.query;
 
-    // Build filter object
     const filter = {};
 
-    // Add category filter if provided
     if (category) {
-      filter.category = category;
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        filter.$or = [
+          { category: category },
+          { category: { $regex: category, $options: 'i' } }
+        ];
+      } else {
+        filter.category = { $regex: category, $options: 'i' };
+      }
     }
 
-    // Add featured filter if provided
     if (featured) {
       filter.isFeatured = featured === 'true';
     }
 
-    // Add price range filter if provided
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // Add search filter if provided
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -152,21 +141,17 @@ export async function GetAllProducts(request, response) {
       ];
     }
 
-    // Calculate pagination
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Execute query with pagination
     const products = await Product.find(filter)
       .skip(skip)
       .limit(limitNum)
       .sort({ dateCreated: -1 });
 
-    // Get total count for pagination
     const total = await Product.countDocuments(filter);
 
-    // Return products with pagination info
     response.status(200).json({
       success: true,
       products,
@@ -186,7 +171,6 @@ export async function GetAllProducts(request, response) {
   }
 }
 
-// Get product by ID
 export async function GetProductById(request, response) {
   try {
     const product = await Product.findById(request.params.id);
@@ -211,7 +195,6 @@ export async function GetProductById(request, response) {
   }
 }
 
-// Update product
 export async function UpdateProduct(request, response) {
   try {
     const product = await Product.findById(request.params.id);
@@ -242,7 +225,6 @@ export async function UpdateProduct(request, response) {
       imageUrls = uploadedImages.filter((url) => url !== null);
     }
 
-    // Parse location like in CreateProduct
     let parsedLocation = [];
     if (Array.isArray(request.body.location)) {
       parsedLocation = request.body.location;
@@ -310,7 +292,7 @@ export async function UpdateProduct(request, response) {
       product: updatedProduct,
     });
   } catch (error) {
-    console.error('UpdateProduct error:', error); // Debug: log full error
+    console.error('UpdateProduct error:', error); 
     response.status(500).json({
       success: false,
       message: 'Error updating product',
@@ -319,7 +301,6 @@ export async function UpdateProduct(request, response) {
   }
 }
 
-// Add review to a product
 export async function AddProductReview(request, response) {
   try {
     const { rating, comment } = request.body;
@@ -332,11 +313,6 @@ export async function AddProductReview(request, response) {
     if (!product) {
       return response.status(404).json({ success: false, message: 'Product not found.' });
     }
-    // Check if user already reviewed
-    if (product.reviews.some(r => r.user.toString() === userId.toString())) {
-      return response.status(400).json({ success: false, message: 'You have already reviewed this product.' });
-    }
-    // Get user info
     const user = await UserModel.findById(userId);
     if (!user) {
       return response.status(404).json({ success: false, message: 'User not found.' });
@@ -350,7 +326,6 @@ export async function AddProductReview(request, response) {
       createdAt: new Date(),
     };
     product.reviews.push(review);
-    // Update product average rating
     product.rating = product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length;
     await product.save();
     response.status(201).json({ success: true, message: 'Review added.', review, reviews: product.reviews });
@@ -359,7 +334,6 @@ export async function AddProductReview(request, response) {
   }
 }
 
-// Delete product
 export async function DeleteProduct(request, response) {
   try {
     const product = await Product.findByIdAndDelete(request.params.id);

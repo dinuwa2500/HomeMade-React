@@ -10,11 +10,8 @@ const MyList = () => {
   useEffect(() => {
     const fetchPurchaseHistory = async () => {
       try {
-        // Fetch orders for the logged-in user
         const response = await fetchDataFromApi('/api/order/myorders');
-        // Flatten all items from all orders, add order date to each item
         const orders = response.orders || response.data || [];
-        // Each order has an 'items' array
         const allItems = orders.flatMap(order =>
           (order.items || []).map(item => ({
             ...item,
@@ -170,7 +167,6 @@ const MyList = () => {
               </div>
             </div>
 
-            {/* Pagination */}
             <div className="mt-10 flex items-center justify-between">
               <div className="text-sm text-gray-500">
                 Showing{' '}

@@ -13,7 +13,7 @@ const CategoryPage = () => {
   const [editingName, setEditingName] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
 
-  // Fetch all categories
+ 
   const fetchCategories = async () => {
     setLoading(true);
     try {
@@ -86,14 +86,14 @@ const CategoryPage = () => {
     }
   };
 
-  // Start editing
+
   const startEdit = (cat) => {
     setEditingId(cat._id);
     setEditingName(cat.name);
     setEditingDescription(cat.description || "");
   };
 
-  // Update category
+ 
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editingName.trim() || !editingDescription.trim()) return;

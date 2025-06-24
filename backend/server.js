@@ -21,15 +21,18 @@ import categoryRouter from "./routes/category.route.js";
 import orderRouter from "./routes/order.route.js";
 import paymentRouter from "./routes/payment.route.js";
 import uploadRouter from "./routes/upload.route.js";
-import path from 'path';
-import fs from 'fs';
+import path from "path";
+import fs from "fs";
 import adminRouter from "./routes/admin.route.js";
 import twofaRouter from "./routes/twofa.routes.js";
+import ticketRoutes from "./routes/ticketRoutes.js";
+import connectCloudinary from "./config/cloudinary.js";
 
 // Import all models before using them in routes/controllers
-import './models/user.model.js';
-import './models/payment.model.js';
-import './models/order.model.js';
+import "./models/user.model.js";
+import "./models/payment.model.js";
+import "./models/order.model.js";
+import "./models/ticketModel.js";
 
 // Config
 dotenv.config();
@@ -45,6 +48,10 @@ app.use(
     origin: process.env.FRONTEND_URI,
   })
 );
+
+// Connect Cloudinary
+connectCloudinary();
+
 app.use(helmet());
 app.use(morgan());
 app.use(
@@ -83,37 +90,38 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/tickets", ticketRoutes);
 
 // Allow cross-origin requests for uploads (images, slips)
-app.use('/uploads', (req, res, next) => {
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+app.use("/uploads", (req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   next();
 });
 
 // Serve uploads directory for static access
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Custom inline-serving route for uploads
-app.get('/uploads/:filename', (req, res) => {
-  const filePath = path.join(process.cwd(), 'uploads', req.params.filename);
+app.get("/uploads/:filename", (req, res) => {
+  const filePath = path.join(process.cwd(), "uploads", req.params.filename);
   if (!fs.existsSync(filePath)) {
-    return res.status(404).send('File not found');
+    return res.status(404).send("File not found");
   }
   // Guess MIME type from extension
   const ext = path.extname(filePath).toLowerCase();
   const mimeTypes = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.pdf': 'application/pdf',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".pdf": "application/pdf",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
     // add more as needed
   };
-  const mimeType = mimeTypes[ext] || 'application/octet-stream';
-  res.setHeader('Content-Type', mimeType);
-  res.setHeader('Content-Disposition', 'inline');
+  const mimeType = mimeTypes[ext] || "application/octet-stream";
+  res.setHeader("Content-Type", mimeType);
+  res.setHeader("Content-Disposition", "inline");
   fs.createReadStream(filePath).pipe(res);
 });
 

@@ -5,11 +5,9 @@ import Product from "../models/product.model.js";
 
 const router = express.Router();
 
-// GET /api/admin/reviews - Get all product reviews for admin
 router.get("/admin/reviews", requireAuth, requireAdmin, async (req, res) => {
   try {
     const products = await Product.find({}, "name reviews");
-    // Flatten all reviews, attaching product info
     const reviews = products.flatMap(product =>
       (product.reviews || []).map(review => ({
         ...review._doc,

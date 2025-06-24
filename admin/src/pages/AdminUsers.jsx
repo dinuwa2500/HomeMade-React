@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_BACKEND_URI || "http://localhost:8000";
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -58,11 +59,29 @@ const AdminUsers = () => {
     }
   };
 
+  const filteredUsers = users.filter((user) => {
+    const q = search.toLowerCase();
+    return (
+      user.firstName?.toLowerCase().includes(q) ||
+      user.name?.toLowerCase().includes(q) ||
+      user.email?.toLowerCase().includes(q) ||
+      user.role?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 min-h-[400px]">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-        {/* Future: Add search/filter here */}
+        <div className="w-full sm:w-[300px]">
+          <input
+            type="text"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-red-200 focus:outline-none transition placeholder-gray-400"
+            placeholder="Search users by name, email, or role..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
       {loading ? (
         <div className="flex justify-center items-center h-48">
@@ -70,7 +89,7 @@ const AdminUsers = () => {
             Loading users...
           </div>
         </div>
-      ) : users.length === 0 ? (
+      ) : filteredUsers.length === 0 ? (
         <div className="text-center text-gray-400 py-16">No users found.</div>
       ) : (
         <div className="overflow-x-auto">
@@ -84,7 +103,7 @@ const AdminUsers = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr
                   key={user._id}
                   className="hover:bg-gray-50 transition-colors"
@@ -99,34 +118,17 @@ const AdminUsers = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                        user.role === "admin"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 flex gap-2 justify-center">
+                  <td className="px-6 py-4 text-gray-600 capitalize">{user.role}</td>
+                  <td className="px-6 py-4 text-center">
                     <button
-                      className={`bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded shadow-sm text-xs font-semibold transition ${
-                        ["admin", "ADMIN"].includes(user.role)
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
+                      className="bg-green-100 hover:bg-green-200 text-green-700 font-semibold py-1 px-3 rounded mr-2 transition"
                       onClick={() => makeAdmin(user._id)}
-                      disabled={["admin", "ADMIN"].includes(
-                        user.role.toUpperCase()
-                      )}
+                      disabled={user.role === "admin"}
                     >
                       Make Admin
                     </button>
-
                     <button
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow-sm text-xs font-semibold transition"
+                      className="bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-1 px-3 rounded transition"
                       onClick={() => deleteUser(user._id)}
                     >
                       Delete

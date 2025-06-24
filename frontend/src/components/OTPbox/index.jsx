@@ -1,27 +1,27 @@
-import React, { useRef, useState, useContext } from "react";
-import "./output.css";
-import { postData } from "../../pages/api"; // Your API helper
-import MyContext from "../../context";
-import { useNavigate } from "react-router-dom";
+import React, { useRef, useState, useContext } from 'react';
+import './output.css';
+import { postData } from '../../pages/api'; // Your API helper
+import MyContext from '../../context';
+import { useNavigate } from 'react-router-dom';
 
 const OtpInput = ({ onSubmitOTP }) => {
   const navigate = useNavigate();
   const context = useContext(MyContext);
-  const [otp, setOtp] = useState(Array(6).fill(""));
+  const [otp, setOtp] = useState(Array(6).fill(''));
   const inputsRef = useRef([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  const isOtpComplete = otp.every((digit) => digit !== "");
+  const isOtpComplete = otp.every((digit) => digit !== '');
 
   const handleChange = (element, index) => {
-    const value = element.value.replace(/\D/, "");
+    const value = element.value.replace(/\D/, '');
     if (!value) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    setError("");
+    setError('');
 
     if (index < 5) {
       inputsRef.current[index + 1].focus();
@@ -29,29 +29,29 @@ const OtpInput = ({ onSubmitOTP }) => {
   };
 
   const handleKeyDown = (e, index) => {
-    if (e.key === "Backspace") {
+    if (e.key === 'Backspace') {
       if (!otp[index] && index > 0) {
         const newOtp = [...otp];
-        newOtp[index - 1] = "";
+        newOtp[index - 1] = '';
         setOtp(newOtp);
         inputsRef.current[index - 1].focus();
       } else {
         const newOtp = [...otp];
-        newOtp[index] = "";
+        newOtp[index] = '';
         setOtp(newOtp);
       }
-    } else if (e.key === "ArrowLeft" && index > 0) {
+    } else if (e.key === 'ArrowLeft' && index > 0) {
       inputsRef.current[index - 1].focus();
-    } else if (e.key === "ArrowRight" && index < 5) {
+    } else if (e.key === 'ArrowRight' && index < 5) {
       inputsRef.current[index + 1].focus();
     }
   };
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text/plain").replace(/\D/g, "");
+    const pasteData = e.clipboardData.getData('text/plain').replace(/\D/g, '');
     if (pasteData.length === 6) {
-      const newOtp = pasteData.split("").slice(0, 6);
+      const newOtp = pasteData.split('').slice(0, 6);
       setOtp(newOtp);
       inputsRef.current[5].focus();
     }
@@ -59,63 +59,71 @@ const OtpInput = ({ onSubmitOTP }) => {
 
   const handleSubmit = async () => {
     if (!isOtpComplete) {
-      setError("Please enter all digits");
+      setError('Please enter all digits');
       return;
     }
 
     setIsSubmitting(true);
-    setError("");
-    
+    setError('');
+
     // If onSubmitOTP prop is provided, use it instead of the default verification logic
     if (onSubmitOTP) {
-      const otpString = otp.join("");
+      const otpString = otp.join('');
       onSubmitOTP(otpString);
       setIsSubmitting(false);
       return;
     }
 
-    const action = localStorage.getItem("action");
-    const otpValue = otp.join("");
-    const email = localStorage.getItem("userEmail");
+    const action = localStorage.getItem('action');
+    const otpValue = otp.join('');
+    const email = localStorage.getItem('userEmail');
 
     try {
       let response;
-      if (action === "forgotpsw") {
-        response = await postData("/api/users/verify-password", {
-          email,
-          otp: otpValue,
-        });
+      if (action === 'forgotpsw') {
+        response = await postData(
+          '/api/users/verify-password',
+          {
+            email,
+            otp: otpValue,
+          },
+          false
+        );
         if (response.success) {
           context.Toast(
-            "success",
-            "OTP verified. You can now reset your password."
+            'success',
+            'OTP verified. You can now reset your password.'
           );
-          localStorage.removeItem("action");
+          localStorage.removeItem('action');
 
           setTimeout(() => {
-            navigate("/login");
+            navigate('/forgot-password');
           }, 1000);
         } else {
-          throw new Error("Invalid OTP.");
+          throw new Error('Invalid OTP.');
         }
       } else {
-        response = await postData("/api/users/verifyemail", {
-          email,
-          otp: otpValue,
-        });
+        response = await postData(
+          '/api/users/verifyemail',
+          {
+            email,
+            otp: otpValue,
+          },
+          false
+        );
         if (response.success) {
-          context.Toast("success", "OTP verified successfully!");
+          context.Toast('success', 'OTP verified successfully!');
           setTimeout(() => {
-            navigate("/login");
+            navigate('/login');
           }, 1000);
         } else {
-          throw new Error("Invalid OTP.");
+          throw new Error('Invalid OTP.');
         }
       }
     } catch (err) {
-      console.error("Error verifying OTP:", err);
-      setError("Invalid OTP. Please try again.");
-      setOtp(Array(6).fill(""));
+      console.error('Error verifying OTP:', err);
+      setError('Invalid OTP. Please try again.');
+      setOtp(Array(6).fill(''));
       inputsRef.current[0].focus();
     }
 
@@ -124,25 +132,29 @@ const OtpInput = ({ onSubmitOTP }) => {
 
   // Add this function inside your component
   const handleResendOtp = async () => {
-    const action = localStorage.getItem("action");
-    const email = localStorage.getItem("userEmail");
+    const action = localStorage.getItem('action');
+    const email = localStorage.getItem('userEmail');
 
     try {
       let response;
-      if (action === "forgotpsw") {
-        response = await postData("/api/users/resendforgototp", { email });
+      if (action === 'forgotpsw') {
+        response = await postData(
+          '/api/users/resendforgototp',
+          { email },
+          false
+        );
       } else {
-        response = await postData("/api/users/verifyemail", { email });
+        response = await postData('/api/users/verifyemail', { email }, false);
       }
 
       if (response.success) {
-        context.Toast("success", "OTP resent successfully!");
+        context.Toast('success', 'OTP resent successfully!');
       } else {
-        throw new Error("Failed to resend OTP.");
+        throw new Error('Failed to resend OTP.');
       }
     } catch (err) {
-      console.error("Error resending OTP:", err);
-      context.Toast("error", "Failed to resend OTP. Please try again.");
+      console.error('Error resending OTP:', err);
+      context.Toast('error', 'Failed to resend OTP. Please try again.');
     }
   };
 
@@ -152,7 +164,7 @@ const OtpInput = ({ onSubmitOTP }) => {
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Verify OTP</h1>
           <p className="text-gray-600">
-            We've sent an OTP to {localStorage.getItem("userEmail")}
+            We've sent an OTP to {localStorage.getItem('userEmail')}
           </p>
         </div>
 
@@ -172,9 +184,9 @@ const OtpInput = ({ onSubmitOTP }) => {
                 disabled={isSubmitting}
                 className={`w-12 h-14 text-center text-2xl font-medium border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   error
-                    ? "border-red-500 shake-animation"
-                    : "border-gray-300 focus:border-blue-500"
-                } ${digit && !error ? "border-green-500" : ""}`}
+                    ? 'border-red-500 shake-animation'
+                    : 'border-gray-300 focus:border-blue-500'
+                } ${digit && !error ? 'border-green-500' : ''}`}
               />
             ))}
           </div>
@@ -187,7 +199,7 @@ const OtpInput = ({ onSubmitOTP }) => {
             <button
               className="text-blue-600 hover:text-blue-800 font-medium"
               onClick={() => {
-                setOtp(Array(6).fill(""));
+                setOtp(Array(6).fill(''));
                 inputsRef.current[0].focus();
               }}
             >
@@ -207,8 +219,8 @@ const OtpInput = ({ onSubmitOTP }) => {
           disabled={!isOtpComplete || isSubmitting}
           className={`w-full py-2 mt-4 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-all ${
             !isOtpComplete || isSubmitting
-              ? "opacity-50 cursor-not-allowed"
-              : ""
+              ? 'opacity-50 cursor-not-allowed'
+              : ''
           }`}
         >
           Submit

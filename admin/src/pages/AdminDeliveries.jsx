@@ -32,7 +32,7 @@ const AdminDeliveries = () => {
       });
       setDeliveryUsers(res.data.deliveries || []);
     } catch (err) {
-      // Optionally show error
+  
     }
   };
 

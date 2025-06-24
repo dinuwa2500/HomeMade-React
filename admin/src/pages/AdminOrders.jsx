@@ -24,7 +24,6 @@ const AdminOrders = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
-  // Fetch orders from API ONLY (no mock)
   useEffect(() => {
     const fetchOrders = async () => {
       setLoading(true);
@@ -45,7 +44,6 @@ const AdminOrders = () => {
     fetchOrders();
   }, []);
 
-  // Filter/search logic
   useEffect(() => {
     let data = [...orders];
     if (search) {
@@ -63,7 +61,6 @@ const AdminOrders = () => {
     setPage(1);
   }, [orders, search, status]);
 
-  // Pagination logic
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.ceil(filtered.length / pageSize);
 

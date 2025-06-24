@@ -11,7 +11,7 @@ import ProductDetails from "./pages/ProductListing/ProductDetails";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { IoCloseSharp } from "react-icons/io5";
-import MyContext from "../src/context"; // Adjust path if needed
+import MyContext from "../src/context"; 
 import Cartpanel from "./components/CartPanle";
 import CartPage from "./pages/Cart";
 import Verify from "./pages/Verify";
@@ -25,6 +25,10 @@ import Orders from "./pages/Orders";
 import MyProfile from "./components/MyProfile";
 import { useEffect } from "react";
 import { fetchDataFromApi } from "./pages/api";
+import MyTickets from "./pages/SupportTicket/MyTickets";
+import TicketRaisePage from "./pages/SupportTicket/TicketRaisePage";
+import RequireAuth from "./components/RequireAuth";
+import CategoryCollapse from "./components/CategoryCollapse"; 
 
 import OrderConfirmation from "./pages/OrderConfirmation";
 import PaymentSlip from "./pages/PaymentSlip";
@@ -35,6 +39,7 @@ import AdminAssignedOrders from "./pages/AdminAssignedOrders";
 import TwoFactorSetup from "./pages/TwoFactorSetup";
 import TwoFactorVerify from "./pages/TwoFactorVerify";
 import Verify2FA from "./pages/Verify2FA/index";
+import FashionMens from "./pages/FashionMens";
 
 function App() {
   const [openCartPanel, setOpenCartPanel] = useState(false);
@@ -80,6 +85,7 @@ function App() {
 
   return (
     <>
+      <Toaster />
       <BrowserRouter>
         <MyContext.Provider value={values}>
           <Header />
@@ -90,22 +96,24 @@ function App() {
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/checkout" element={<CheckOut />} />
-            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<RequireAuth><CheckOut /></RequireAuth>} />
+            <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
             <Route path="/verify" element={<Verify />} />
             <Route path="/verify2fa" element={<Verify2FA />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/payment-slip" element={<PaymentSlip />} />
-            <Route path="/deliveries" element={<Deliveries />} />
-            <Route path="/deliveries/:orderId" element={<DeliveryDetails />} />
+            <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
+            <Route path="/payment-slip" element={<RequireAuth><PaymentSlip /></RequireAuth>} />
+            <Route path="/deliveries" element={<RequireAuth><Deliveries /></RequireAuth>} />
+            <Route path="/deliveries/:orderId" element={<RequireAuth><DeliveryDetails /></RequireAuth>} />
+            <Route path="/raise-ticket" element={<RequireAuth><TicketRaisePage /></RequireAuth>} />
 
-            {/* ✅ NESTED ROUTES for MyAccount */}
-            <Route path="/profile" element={<MyAccount />}>
-              <Route index element={<MyProfile />} /> {/* default view */}
+            <Route path="/category/:categoryName" element={<RequireAuth><CategoryCollapse /></RequireAuth>} />
+
+            <Route path="/profile" element={<RequireAuth><MyAccount /></RequireAuth>}>
+              <Route index element={<MyProfile />} /> 
               <Route path="my-list" element={<MyList />} />
               <Route path="orders" element={<Orders />} />
-              {/* My Deliveries: list and details for drivers */}
+              <Route path="my-tickets" element={<MyTickets />} />
               <Route path="my-deliveries" element={<AdminAssignedOrders />} />
               <Route
                 path="my-deliveries/:orderId"
@@ -113,7 +121,6 @@ function App() {
               />
             </Route>
 
-            {/* Two Factor Authentication routes */}
             <Route
               path="/2fa/setup"
               element={
@@ -132,13 +139,13 @@ function App() {
                 />
               }
             />
+            <Route path="/fashion/mens" element={<FashionMens />} />
           </Routes>
           <Footer />
         </MyContext.Provider>
 
         <Drawer
           open={openCartPanel}
-          s
           onClose={toggleCartPanel(false)}
           anchor="right"
           className=" cartPanel"
@@ -154,8 +161,6 @@ function App() {
           <Cartpanel />
         </Drawer>
       </BrowserRouter>
-
-      <Toaster />
     </>
   );
 }

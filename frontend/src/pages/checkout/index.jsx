@@ -15,7 +15,10 @@ import axios from "axios";
 import { clearCart } from "../../features/cartSlice";
 
 const CheckOut = () => {
-  const userInfo = useSelector((state) => state.user.userInfo) || JSON.parse(localStorage.getItem('userInfo')) || {};
+  const userInfo =
+    useSelector((state) => state.user.userInfo) ||
+    JSON.parse(localStorage.getItem("userInfo")) ||
+    {};
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -54,8 +57,8 @@ const CheckOut = () => {
     }
     try {
       // Submit order to backend
-      const userId = userInfo._id || localStorage.getItem('userId');
-      const token = userInfo.token || localStorage.getItem('token');
+      const userId = userInfo._id || localStorage.getItem("userId");
+      const token = userInfo.token || localStorage.getItem("accesstoken");
       const delivery_address = formData.address;
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URI}/api/order/place`,
@@ -75,7 +78,9 @@ const CheckOut = () => {
       Swal.fire({
         icon: "success",
         title: "Order placed!",
-        text: res.data.message || "Order placed successfully! Cash payment will be collected on delivery.",
+        text:
+          res.data.message ||
+          "Order placed successfully! Cash payment will be collected on delivery.",
         confirmButtonColor: "#ca0815",
       }).then(() => {
         dispatch(clearCart());

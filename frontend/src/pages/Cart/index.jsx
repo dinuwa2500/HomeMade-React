@@ -20,15 +20,12 @@ const CartPage = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const dispatch = useDispatch();
 
-  // Sync cart from backend ONLY on first mount, not on every user/dispatch change
   useEffect(() => {
     if (user && user.token) {
       dispatch(syncUserCart(user.token));
     }
-    // eslint-disable-next-line
-  }, []); // Only once on mount
+  }, []);
 
-  // Increment item quantity
   const incrementQuantity = async (item) => {
     if (item.qty < item.countInStock) {
       dispatch(updateCartItem({ ...item, qty: item.qty + 1 }));
@@ -38,7 +35,6 @@ const CartPage = () => {
     }
   };
 
-  // Decrement item quantity
   const decrementQuantity = async (item) => {
     if (item.qty > 1) {
       dispatch(updateCartItem({ ...item, qty: item.qty - 1 }));
@@ -48,7 +44,6 @@ const CartPage = () => {
     }
   };
 
-  // Remove single item
   const removeItem = async (item) => {
     dispatch(removeFromCart(item));
     if (user && user.token && item.cartId) {
@@ -56,7 +51,6 @@ const CartPage = () => {
     }
   };
 
-  // Clear entire cart
   const handleClearCart = async () => {
     for (const item of cartItems) {
       if (user && user.token && item.cartId) {
@@ -66,23 +60,33 @@ const CartPage = () => {
     dispatch(clearCart());
   };
 
-  // Calculate totals
+  const getOriginalPrice = (item) => item.originalPrice || item.price;
+  const getDiscountedPrice = (item) => {
+    if (item.discount && item.discount > 0) {
+      return getOriginalPrice(item) - (getOriginalPrice(item) * item.discount) / 100;
+    }
+    return getOriginalPrice(item);
+  };
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
+    (sum, item) => sum + getDiscountedPrice(item) * item.qty,
     0
   );
   const shippingFee = cartItems.length > 0 ? 200 : 0;
   const total = subtotal + shippingFee;
-  // Show unique products count
+  const totalDiscount = cartItems.reduce((sum, item) => {
+    if (item.discount && item.discount > 0) {
+      return sum + ((getOriginalPrice(item) - getDiscountedPrice(item)) * item.qty);
+    }
+    return sum;
+  }, 0);
   const uniqueProductCount = cartItems.length;
-  // Show total units
   const itemCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <section className="section py-8 bg-gray-50 min-h-screen">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Column - Cart Items */}
           <div className="lg:w-3/4">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-6">
@@ -93,7 +97,6 @@ const CartPage = () => {
                   <span className="font-bold text-red-500">
                     {uniqueProductCount}
                   </span> Items |{" "}
-                  {/* <span className="font-bold text-red-500">{itemCount}</span> Units in your cart */}
                 </p>
               </div>
 
@@ -111,14 +114,12 @@ const CartPage = () => {
                 </div>
               ) : (
                 <>
-                  {/* Cart Items List */}
                   <div className="divide-y divide-gray-200">
                     {cartItems.map((item) => (
                       <div
                         key={item._id + item.size}
                         className="py-6 flex flex-col sm:flex-row gap-4"
                       >
-                        {/* Product Image */}
                         <div className="w-full sm:w-1/6 flex-shrink-0">
                           <Link
                             to={`/product/${item._id}`}
@@ -132,7 +133,6 @@ const CartPage = () => {
                           </Link>
                         </div>
 
-                        {/* Product Info */}
                         <div className="flex-grow relative">
                           <div className="flex justify-between">
                             <div>
@@ -154,10 +154,25 @@ const CartPage = () => {
                             </button>
                           </div>
 
-                          {/* Price and Quantity */}
                           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="text-lg font-bold text-red-600">
-                              Rs {item.price.toFixed(2)}
+                            <div>
+                              {item.discount && item.discount > 0 ? (
+                                <>
+                                  <span className="text-lg font-bold text-red-600">
+                                    Rs {getDiscountedPrice(item).toFixed(2)}
+                                  </span>
+                                  <span className="text-sm line-through text-gray-500 pl-2">
+                                    Rs {getOriginalPrice(item).toFixed(2)}
+                                  </span>
+                                  <span className="ml-2 bg-red-100 text-red-600 px-2 py-1 text-xs rounded">
+                                    -{item.discount}%
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-lg font-bold text-red-600">
+                                  Rs {getOriginalPrice(item).toFixed(2)}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center border border-gray-300 rounded-md w-fit">
@@ -183,7 +198,7 @@ const CartPage = () => {
                             </div>
 
                             <div className="text-lg font-bold text-gray-800">
-                              Rs {(item.price * item.qty).toFixed(2)}
+                              Rs {(getDiscountedPrice(item) * item.qty).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -191,7 +206,6 @@ const CartPage = () => {
                     ))}
                   </div>
 
-                  {/* Continue Shopping */}
                   <div className="mt-6 flex justify-between items-center">
                     <Link
                       to="/products"
@@ -211,7 +225,6 @@ const CartPage = () => {
             </div>
           </div>
 
-          {/* Right Column - Order Summary (only show if items exist) */}
           {cartItems.length > 0 && (
             <div className="lg:w-1/4">
               <div className="bg-white rounded-lg shadow-md p-6 top-4">
@@ -236,7 +249,9 @@ const CartPage = () => {
                   </div>
                   <div className="flex justify-between border-t border-gray-200 pt-3">
                     <span className="text-gray-600">Discount</span>
-                    <span className="font-medium text-red-600">- Rs 0.00</span>
+                    <span className="font-medium text-red-600">
+                      - Rs {totalDiscount.toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
@@ -259,7 +274,6 @@ const CartPage = () => {
                 </p>
               </div>
 
-              {/* Payment Methods */}
               <div className="mt-4 bg-white rounded-lg shadow-md p-6">
                 <h4 className="font-medium text-gray-800 mb-3">We Accept</h4>
                 <div className="flex gap-3">

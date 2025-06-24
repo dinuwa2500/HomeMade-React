@@ -4,7 +4,7 @@ const orderSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user', // should match your user model name
+      ref: 'user',
       required: true,
     },
     orderId: {
@@ -52,12 +52,12 @@ const orderSchema = new mongoose.Schema(
       default: false,
     },
     paymentSlip: {
-      type: String, // file URL or path
+      type: String,
       default: '',
     },
     delivery: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user', // references a delivery user
+      ref: 'user',
       default: null,
     },
   },

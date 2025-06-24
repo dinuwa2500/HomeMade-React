@@ -9,23 +9,18 @@ import generatedAccessToken from "../utilities/generateAccessToken.js";
 import generatedRefreshToken from "../utilities/generateRefreshToken.js";
 import { v2 as cloudinary } from "cloudinary";
 
-// Configuration
 cloudinary.config({
   cloud_name: "dinuwapvt",
   api_key: "487264227394868",
-  api_secret: "LuuDPSUEt53s0YYBfJMf6HuFiJg", // Click 'View API Keys' above to copy your API secret
+  api_secret: "LuuDPSUEt53s0YYBfJMf6HuFiJg",
   secure: true,
-  timeout: 60000, // Increase timeout to 60 seconds
+  timeout: 60000,
 });
-
-console.log("Cloudinary config:", cloudinary.config());
 
 export async function registerUserController(request, response) {
   try {
     let user;
     const { name, email, password, role } = request.body;
-    // Debug: Log the incoming request body
-    console.log("Request Body:", request.body);
     if (!name || !email || !password) {
       return response.status(400).json({
         message: "provide email name password",
@@ -34,7 +29,6 @@ export async function registerUserController(request, response) {
       });
     }
 
-    // Check if user already exists
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return response.status(400).json({
@@ -47,7 +41,6 @@ export async function registerUserController(request, response) {
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    // Admin registration: set role and verify_email
     if (role === "admin") {
       user = new UserModel({
         name,
@@ -57,7 +50,6 @@ export async function registerUserController(request, response) {
         verify_email: true,
       });
     } else {
-      // Regular user registration
       const verifycode = Math.floor(100000 + Math.random() * 90000).toString();
       user = new UserModel({
         name,
@@ -70,19 +62,15 @@ export async function registerUserController(request, response) {
     }
     await user.save();
 
-    // console.log('Sending email to:', email); // Log the email being passed
-
-    //send verification email
     if (role !== "admin") {
       const verifyEmail = await sendEmailFun({
         to: email,
         subject: "Verify Email from Craftopia",
-        text: "", // Optional plain text version
-        html: verificationEmail(name, user.otp), // The HTML template
+        text: "",
+        html: verificationEmail(name, user.otp),
       });
     }
 
-    //jwt token
     const token = jwt.sign(
       { email: user.email, id: user._id },
       process.env.JWT_SECRET
@@ -149,7 +137,6 @@ export async function verifyEmailController(request, response) {
       });
     }
   } catch (error) {
-    console.error("Error in verifyEmailController:", error);
     return response.status(500).json({
       error: true,
       success: false,
@@ -198,19 +185,16 @@ export async function loginUser(request, response) {
       });
     }
 
-    // 2FA logic
     if (user.twoFaEnabled) {
-      // Generate a new 2FA code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       user.twoFaEmailCode = code;
-      user.twoFaCodeExpires = Date.now() + 5 * 60 * 1000; // 5 min expiry
+      user.twoFaCodeExpires = Date.now() + 5 * 60 * 1000;
       await user.save();
-      // Send code via email (replace with your email logic)
       await sendEmailFun({
         to: user.email,
         subject: "2Fa Email from Craftopia",
-        text: "", // Optional plain text version
-        html: verificationEmail(user.name, code), // The HTML template
+        text: "",
+        html: verificationEmail(user.name, code),
       });
       return response.status(200).json({
         success: false,
@@ -246,7 +230,6 @@ export async function loginUser(request, response) {
       },
     });
   } catch (error) {
-    console.error("Error in loginUser:", error);
     return response.status(500).json({
       message: error.message || "Internal server error",
       error: true,
@@ -267,11 +250,9 @@ export async function logoutUser(request, response) {
       });
     }
 
-    // Clear cookies
     response.clearCookie("accesstoken");
     response.clearCookie("refreshtoken");
 
-    // Find user by refresh token and clear it from database
     const user = await UserModel.findOneAndUpdate({ refresh_token: "" });
     if (!user) {
       return response.status(200).json({
@@ -287,7 +268,6 @@ export async function logoutUser(request, response) {
       message: "Logged out successfully",
     });
   } catch (error) {
-    console.error("Error in logoutUser:", error);
     return response.status(500).json({
       success: false,
       error: true,
@@ -296,9 +276,7 @@ export async function logoutUser(request, response) {
   }
 }
 
-// Avatar controller
-
-const IMGUR_CLIENT_ID = "4a7ef9e565dbe94"; // Replace with your actual Imgur Client ID
+const IMGUR_CLIENT_ID = "4a7ef9e565dbe94";
 
 export async function userAvatarController(request, response) {
   try {
@@ -316,7 +294,6 @@ export async function userAvatarController(request, response) {
     const user = await UserModel.findOne({ _id: userId });
 
     if (!user) {
-      // Clean up uploaded file if user not found
       if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -324,7 +301,6 @@ export async function userAvatarController(request, response) {
     }
 
     try {
-      // Read image as base64
       const base64Image = fs.readFileSync(file.path, { encoding: "base64" });
 
       const uploadRes = await axios.post(
@@ -340,7 +316,6 @@ export async function userAvatarController(request, response) {
         }
       );
 
-      // Remove local file after successful upload
       if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -358,14 +333,12 @@ export async function userAvatarController(request, response) {
         avatar: user.avatar,
       });
     } catch (uploadError) {
-      // Clean up file on upload error
       if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
       throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
   } catch (error) {
-    console.error("Controller error:", error);
     return response.status(500).json({
       success: false,
       error: true,
@@ -375,7 +348,6 @@ export async function userAvatarController(request, response) {
   }
 }
 
-// deleteHash is returned during upload and must be saved when uploading
 export async function deleteImgurImage(deleteHash) {
   try {
     const response = await axios.delete(
@@ -394,7 +366,6 @@ export async function deleteImgurImage(deleteHash) {
       data: response.data,
     };
   } catch (error) {
-    console.error("Imgur delete error:", error.response?.data || error.message);
     return {
       success: false,
       message: "Failed to delete image",
@@ -405,7 +376,6 @@ export async function deleteImgurImage(deleteHash) {
 
 export async function UserDetailsUpdate(request, response) {
   try {
-    // Use either _id or id from the user object for robustness
     const userId = request.user._id || request.user.id;
     const {
       name,
@@ -442,7 +412,6 @@ export async function UserDetailsUpdate(request, response) {
       role: role || userExist.role,
     };
 
-    // Only update password if provided
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateFields.password = await bcrypt.hash(password, salt);
@@ -461,7 +430,6 @@ export async function UserDetailsUpdate(request, response) {
       user: updateUser,
     });
   } catch (error) {
-    console.error("Error updating user details:", error);
     return response.status(500).json({
       success: false,
       message: "Failed to update user details",
@@ -493,8 +461,8 @@ export async function forgotPassword(request, response) {
     const verifyEmail = await sendEmailFun({
       to: email,
       subject: "Password reset OTP",
-      text: "", // Optional plain text version
-      html: verificationEmail(user.name, verifycode), // The HTML template
+      text: "",
+      html: verificationEmail(user.name, verifycode),
     });
 
     return response.status(200).json({
@@ -503,7 +471,6 @@ export async function forgotPassword(request, response) {
       otp: verifycode,
     });
   } catch (error) {
-    console.error("Error in forgot password:", error);
     return response.status(500).json({
       success: false,
       message: "Failed to process forgot password request",
@@ -545,7 +512,6 @@ export async function verifyForgotPasswordOtp(request, response) {
       });
     }
 
-    // Clear the OTP after successful verification
     user.otp = null;
     user.otpExpires = null;
     await user.save();
@@ -555,7 +521,6 @@ export async function verifyForgotPasswordOtp(request, response) {
       message: "OTP verified successfully",
     });
   } catch (error) {
-    console.error("Error in verifyForgotPasswordOtp:", error);
     return response.status(500).json({
       success: false,
       message: "Internal server error",
@@ -564,7 +529,6 @@ export async function verifyForgotPasswordOtp(request, response) {
   }
 }
 
-//reset password
 export async function resetpass(request, response) {
   try {
     const { email, newPassword, confirmPassword } = request.body;
@@ -584,11 +548,9 @@ export async function resetpass(request, response) {
       });
     }
 
-    // Hash the new password
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update user's password and clear OTP fields
     user.password = hashPassword;
     user.forgot_password_otp = null;
     user.forgot_password_expiry = null;
@@ -599,7 +561,6 @@ export async function resetpass(request, response) {
       message: "Password reset successfully",
     });
   } catch (error) {
-    console.error("Error in resetpass:", error);
     return response.status(500).json({
       success: false,
       message: "Internal server error",
@@ -608,7 +569,6 @@ export async function resetpass(request, response) {
   }
 }
 
-//refresh token
 export async function refreshToken(request, response) {
   try {
     const { refreshToken } = request.cookies.refreshtoken;
@@ -620,10 +580,8 @@ export async function refreshToken(request, response) {
       });
     }
 
-    // Verify the refresh token
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-    // Find user by ID from decoded token
     const user = await UserModel.findById(decoded.id);
     if (!user) {
       return response.status(404).json({
@@ -632,7 +590,6 @@ export async function refreshToken(request, response) {
       });
     }
 
-    // Generate new access token
     const accessToken = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -644,7 +601,6 @@ export async function refreshToken(request, response) {
       accessToken,
     });
   } catch (error) {
-    console.error("Error in refreshToken:", error);
     return response.status(401).json({
       success: false,
       message: "Invalid refresh token",
@@ -652,8 +608,6 @@ export async function refreshToken(request, response) {
     });
   }
 }
-
-//get login user details
 
 export async function getLoginUserDetails(request, response) {
   try {
@@ -675,7 +629,6 @@ export async function getLoginUserDetails(request, response) {
       user,
     });
   } catch (error) {
-    console.error("Error in getLoginUserDetails:", error);
     return response.status(500).json({
       success: false,
       message: "Error fetching user details",
@@ -699,7 +652,6 @@ export async function deleteUser(request, response) {
       message: "User deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting user:", error);
     return response.status(500).json({
       success: false,
       message: "Failed to delete user",
@@ -708,7 +660,6 @@ export async function deleteUser(request, response) {
   }
 }
 
-// Get all users, filter by role if provided
 export async function getUsers(request, response) {
   try {
     const { role } = request.query;
@@ -725,10 +676,9 @@ export async function getUsers(request, response) {
   }
 }
 
-// --- 2FA EMAIL: SEND CODE ---
 export async function send2faCode(req, res) {
   try {
-    const userId = req.user?.id || req.body.userId; // Adjust as needed for your auth
+    const userId = req.user?.id || req.body.userId;
     const user = await UserModel.findById(userId);
     if (!user)
       return res
@@ -741,8 +691,8 @@ export async function send2faCode(req, res) {
     await sendEmailFun({
       to: user.email,
       subject: "2Fa Email from Craftopia",
-      text: "", // Optional plain text version
-      html: verificationEmail(user.name, code), // The HTML template
+      text: "",
+      html: verificationEmail(user.name, code),
     });
     res.json({
       success: true,
@@ -757,7 +707,6 @@ export async function send2faCode(req, res) {
   }
 }
 
-// --- 2FA EMAIL: VERIFY CODE ---
 export async function verify2faCode(req, res) {
   try {
     const userId = req.user?.id || req.body.userId;
@@ -775,11 +724,9 @@ export async function verify2faCode(req, res) {
     }
     user.twoFaEmailCode = null;
     user.twoFaCodeExpires = null;
-    // Set twoFaEnabled to true when verifying the code
     if (enableTwoFa) {
       user.twoFaEnabled = true;
     }
-    // Issue tokens
     const accesstoken = await generatedAccessToken(user._id);
     const refreshtoken = await generatedRefreshToken(user._id);
     await user.save();
@@ -808,7 +755,6 @@ export async function verify2faCode(req, res) {
   }
 }
 
-// --- 2FA EMAIL: DISABLE ---
 export async function disable2fa(req, res) {
   try {
     const userId = req.user?.id || req.body.userId;

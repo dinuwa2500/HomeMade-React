@@ -41,14 +41,14 @@ const AdminReviews = () => {
     fetchReviews();
   }, []);
 
-  // Filtering
+  // 
   const filteredReviews = reviews.filter(
     (r) =>
       (r.customerName || r.name || r.email || "").toLowerCase().includes(search.toLowerCase()) ||
       (r.productName || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  // Sorting
+  // 
   const sortedReviews = [...filteredReviews].sort((a, b) => {
     if (sortBy === "date") {
       return sortDir === "desc"
@@ -61,14 +61,12 @@ const AdminReviews = () => {
     return 0;
   });
 
-  // Pagination
   const totalPages = Math.ceil(sortedReviews.length / REVIEWS_PER_PAGE);
   const paginatedReviews = sortedReviews.slice(
     (currentPage - 1) * REVIEWS_PER_PAGE,
     currentPage * REVIEWS_PER_PAGE
   );
 
-  // Actions
   const handleStatus = async (id, newStatus) => {
     const prev = [...reviews];
     setReviews((revs) =>

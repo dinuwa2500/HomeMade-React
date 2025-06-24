@@ -20,6 +20,8 @@ const syncUserCart = createAsyncThunk(
       qty: item.quantity,
       countInStock: item.productId.countInStock,
       cartId: item._id,
+      discount: item.productId.discount || 0,
+      originalPrice: item.productId.price
     }));
     localStorage.setItem('cartItems', JSON.stringify(cart));
     return cart;

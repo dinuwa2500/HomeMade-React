@@ -25,9 +25,6 @@ const CartPanel = () => {
       className="w-full h-full flex flex-col"
       style={{ height: 'calc(100% - 55px)' }}
     >
-      {' '}
-      {/* Container with fixed height */}
-      {/* Scrollable area - grows to fill space */}
       <div className="flex-1 overflow-y-auto py-3 px-4">
         {cartItems.length > 0 ? (
           cartItems.map((item) => (
@@ -62,7 +59,6 @@ const CartPanel = () => {
           <p className="text-center text-gray-500">Your cart is empty.</p>
         )}
       </div>
-      {/* Bottom section - fixed at container bottom */}
       <div className="w-full border-t border-[rgba(0,0,0,0.1)] py-3 px-4 bg-white">
         <div className="flex justify-between w-full">
           <span className="text-[14px] font-[600]">

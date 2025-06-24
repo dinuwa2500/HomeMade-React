@@ -8,7 +8,14 @@ import { Button, IconButton, Avatar, Menu, MenuItem } from "@mui/material";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import Navigation from "./Navigation";
 import MyContext from "../../context";
-import { FiUser, FiShoppingBag, FiHeart, FiLogOut } from "react-icons/fi";
+import {
+  FiUser,
+  FiShoppingBag,
+  FiHeart,
+  FiLogOut,
+  FiClipboard,
+  FiPlusCircle,
+} from "react-icons/fi";
 import { useSelector } from "react-redux";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -27,9 +34,7 @@ const Header = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const userInfo = useSelector((state) => state.user.userInfo);
 
-  // Show unique products count for badge (not total units)
   const cartCount = Array.isArray(cartItems) ? cartItems.length : 0;
-  // Show total units for tooltip/text if needed
   const totalUnits = Array.isArray(cartItems)
     ? cartItems.reduce((acc, item) => acc + (item.qty || 0), 0)
     : 0;
@@ -47,20 +52,16 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    // Clear localStorage items
     localStorage.removeItem("accesstoken");
     localStorage.removeItem("refreshtoken");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
 
-    // Update context
     context.setisLogin(false);
 
-    // Optional: show toast
     context.Toast("success", "Logged out successfully!");
 
-    // Optional: redirect to login or home
-    // navigate("/login"); // if you want to send the user to login after logout
+    navigate("/login");
   };
 
   return (
@@ -129,7 +130,6 @@ const Header = () => {
                 </li>
               ) : (
                 <>
-                  {/* Fixed clickable profile section */}
                   <div
                     onClick={handleProfileClick}
                     className="cursor-pointer flex items-center gap-3 myAccountWrap"
@@ -200,27 +200,26 @@ const Header = () => {
                     <MenuItem
                       onClick={() => {
                         handleClose();
-                        navigate("/profile"); // Make sure this route exists
+                        navigate("/profile");
                       }}
                     >
                       <Avatar sx={{ width: 24, height: 24, mr: 1.5 }} />
                       My Account
                     </MenuItem>
 
-                    <MenuItem onClick={handleClose}>
-                      <FiShoppingBag
+                    <MenuItem onClick={() => navigate("/profile/my-tickets")}>
+                      <FiClipboard
                         fontSize="small"
                         style={{ marginRight: "12px" }}
                       />
-                      My Orders
+                      My Tickets
                     </MenuItem>
-
-                    <MenuItem onClick={handleClose}>
-                      <FiHeart
+                    <MenuItem onClick={() => navigate("/raise-ticket")}>
+                      <FiPlusCircle
                         fontSize="small"
                         style={{ marginRight: "12px" }}
                       />
-                      My Wishlist
+                      Raise a Ticket
                     </MenuItem>
 
                     <MenuItem onClick={handleLogout}>

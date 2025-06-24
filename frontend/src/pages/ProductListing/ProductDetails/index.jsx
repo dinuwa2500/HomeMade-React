@@ -20,7 +20,8 @@ const ProductDetails = () => {
     rating: 0,
     comment: "",
   });
-  const [ProductActionIndex, setProductActionIndex] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [sizeError, setSizeError] = useState("");
   const [activeTab, setActiveTab] = useState("description");
   const sizes = ["S", "M", "L", "XL"];
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -82,21 +83,28 @@ const ProductDetails = () => {
     }
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      setSizeError("Please select a size before adding to cart.");
+      return;
+    }
+    setSizeError("");
     if (!product) return;
-    const selectedSize = sizes[ProductActionIndex] || sizes[0];
-    if (user && user.token) {
-      await addCartItemAPI(product._id, user.token);
+    let finalPrice = product.price;
+    if (product.discount && product.discount > 0) {
+      finalPrice = product.price - (product.price * product.discount) / 100;
     }
     dispatch(
       addToCart({
         _id: product._id,
         name: product.name,
         image: product.images?.[0],
-        price: product.price,
+        price: finalPrice,
         size: selectedSize,
         qty: quantity,
         countInStock: product.countInStock,
+        discount: product.discount || 0,
+        originalPrice: product.price,
       })
     );
   };
@@ -105,7 +113,6 @@ const ProductDetails = () => {
 
   return (
     <>
-      {/* Breadcrumbs */}
       <div className="py-5">
         <div className="container">
           <Breadcrumbs aria-label="breadcrumb">
@@ -120,16 +127,13 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Main Product Section */}
       <section className="bg-white py-5">
         <div className="container">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Image */}
             <div className="w-full lg:w-1/3">
               <ProductZoom images={product.images} />
             </div>
 
-            {/* Product Content */}
             <div className="w-full lg:w-2/3">
               <h1 className="text-[25px] font-semibold mb-2">{product.name}</h1>
 
@@ -173,29 +177,23 @@ const ProductDetails = () => {
 
               <p className="text-gray-700 mb-4">{product.description}</p>
 
-              {/* Size Selection */}
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[14px]">Size:</span>
-                <div className="flex items-center gap-2">
-                  {sizes.map((size, index) => (
-                    <Button
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  {sizes.map((size) => (
+                    <button
                       key={size}
-                      onClick={() => setProductActionIndex(index)}
-                      className={`!border !rounded-md ${
-                        ProductActionIndex === index
-                          ? "!bg-black !text-white"
-                          : "!bg-white !text-black"
-                      }`}
+                      className={`px-3 py-1 rounded border ${selectedSize === size ? "bg-red-500 text-white border-red-500" : "bg-white text-gray-700 border-gray-300"}`}
+                      onClick={() => setSelectedSize(size)}
+                      type="button"
                     >
                       {size}
-                    </Button>
+                    </button>
                   ))}
                 </div>
+                {sizeError && <div className="text-red-500 text-sm mt-1">{sizeError}</div>}
               </div>
 
-              {/* Quantity & Add to Cart */}
               <div className="flex items-center gap-4 mb-4 group relative w-full max-w-[320px]">
-                {/* Quantity Selector */}
                 <div className="flex items-center border rounded-md overflow-hidden w-[110px] bg-white">
                   <button
                     type="button"
@@ -219,7 +217,6 @@ const ProductDetails = () => {
                     +
                   </button>
                 </div>
-                {/* Add to Cart Button - only visible on hover */}
                 <Button
                   onClick={handleAddToCart}
                   className="absolute right-0 top-0 h-full w-[170px] opacity-100 group-hover:opacity-100 transition-all duration-300 !bg-black !text-white !rounded-md !py-2 flex items-center justify-center gap-2 text-lg font-semibold  disabled:cursor-not-allowed shadow-lg"
@@ -231,7 +228,6 @@ const ProductDetails = () => {
                 </Button>
               </div>
 
-              {/* Wishlist */}
               <Button
                 startIcon={<FaHeart />}
                 className="!bg-white !text-red-600 border border-red-600 px-4 py-2 rounded-md"
@@ -239,7 +235,6 @@ const ProductDetails = () => {
                 Add to Wishlist
               </Button>
 
-              {/* Tabs for Description/Reviews */}
               <div className="mt-8">
                 <div className="flex gap-4 mb-4">
                   <button
@@ -315,7 +310,6 @@ const ProductDetails = () => {
                         Please log in to write a review.
                       </div>
                     )}
-                    {/* Show reviews */}
                     <div className="mt-8">
                       <h4 className="text-md font-semibold mb-2">
                         User Reviews
@@ -357,7 +351,6 @@ const ProductDetails = () => {
         </div>
       </section>
 
-      {/* Related Products Slider */}
       <section className="py-5 bg-white">
         <div className="container">
           <h2 className="text-[20px] font-[600] mb-4">Related Products</h2>
