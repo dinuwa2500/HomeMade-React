@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 🏡 Craftopia
 
 Craftopia is the frontend of a homemade product buying and selling platform built using React. It provides users with a smooth and intuitive interface to browse, buy, and sell homemade goods. The application focuses on user-friendliness, responsiveness, and clean design.
@@ -61,5 +61,4 @@ Feel free to fork the project, raise issues, and submit PRs. Contributions are w
 
 This project is licensed under the MIT License.
 =======
-# HomeMade-React
->>>>>>> 221ba7a (Initial commit)
+
