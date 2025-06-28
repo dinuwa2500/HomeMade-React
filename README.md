@@ -57,8 +57,5 @@ This project is designed to work with the HomeMade-API backend (MERN stack). Mak
 👨‍💻 Contributing
 
 Feel free to fork the project, raise issues, and submit PRs. Contributions are welcome!
-📄 License
 
-This project is licensed under the MIT License.
-=======
 
