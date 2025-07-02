@@ -1,61 +1,77 @@
 
-🏡 Craftopia
+# 🏡 Craftopia
 
 Craftopia is the frontend of a homemade product buying and selling platform built using React. It provides users with a smooth and intuitive interface to browse, buy, and sell homemade goods. The application focuses on user-friendliness, responsiveness, and clean design.
-🚀 Features
 
-    🔐 User authentication (Login/Signup)
+---
 
-    🛒 Browse and buy homemade products
+## 🚀 Features
 
-    📦 List and manage your own products for sale
+- 🔐 User authentication (Login/Signup)  
+- 🛒 Browse and buy homemade products  
+- 📦 List and manage your own products for sale  
+- 💬 Contact support via a ticket system  
+- 🔍 Search and filter products  
+- 📱 Fully responsive design  
+- 🎨 Tailwind CSS for styling  
 
-    💬 Contact support via a ticket system
+---
 
-    🔍 Search and filter products
+## 🛠️ Built With
 
-    📱 Fully responsive design
+- [React](https://react.dev/) - JavaScript library for building user interfaces  
+- [React Router](https://reactrouter.com/) - For navigation  
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework  
+- [Axios](https://axios-http.com/) - HTTP client for API calls  
+- [Vite](https://vitejs.dev/) - Lightning-fast development environment  
 
-    🎨 Tailwind CSS for styling
+---
 
-🛠️ Built With
+## 🌐 Live Demo
 
-    React - JavaScript library for building user interfaces
+Try the frontend live here:  
+➡️ [Craftopia Frontend Demo](https://home-made-react-tau.vercel.app/)  
 
-    React Router - For navigation
+---
 
-    Tailwind CSS - Utility-first CSS framework
+## 📦 Installation
 
-    Axios - HTTP client for API calls
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/dinuwa2500/HomeMade-React.git
+   ```
 
-    Vite - Lightning-fast development environment (if applicable)
+2. **Navigate to the project folder**  
+   ```bash
+   cd HomeMade-React
+   ```
 
-📦 Installation
+3. **Install dependencies**  
+   ```bash
+   npm install
+   ```
 
-    Clone the repository:
+4. **Start the development server**  
+   ```bash
+   npm run dev
+   ```
 
-git clone https://github.com/dinuwa2500/HomeMade-React.git
+The app will run at [http://localhost:5173](http://localhost:5173) (or the port specified by Vite).
 
+---
 
-    Navigate to the project folder:
+## 🔗 Backend Integration
 
-cd HomeMade 1.0
+This project is designed to work with the **HomeMade-API** backend (MERN stack). Ensure the backend is running and CORS is properly configured to allow requests from this React frontend.
 
-    Install dependencies:
+---
 
-npm install
+## 👨‍💻 Contributing
 
-    Start the development server:
+Contributions are welcome! Feel free to fork the project, open issues, or submit pull requests to improve the platform.
 
-npm run dev
+---
 
-    The app will run at http://localhost:5173 (or the port specified by Vite).
+## 📫 Contact
 
-🔗 Backend Integration
-
-This project is designed to work with the HomeMade-API backend (MERN stack). Make sure the backend is running and CORS is properly configured to allow requests from this React frontend.
-👨‍💻 Contributing
-
-Feel free to fork the project, raise issues, and submit PRs. Contributions are welcome!
-
-
+For questions or suggestions, feel free to open an issue on the repository.
